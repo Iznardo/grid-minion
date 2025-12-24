@@ -1,4 +1,28 @@
-.env
 manual_test.py
-.venv
-__pycache__
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos Virtuales
+.venv/
+venv/
+env/
+
+# Distribución / Packaging
+build/
+dist/
+*.egg-info/
+
+# Logs y pruebas
+*.log
+.pytest_cache/
+
+# Variables de entorno 
+.env
+.env.local
+
+# IDEs
+.vscode/
+.idea/
