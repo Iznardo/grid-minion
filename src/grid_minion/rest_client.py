@@ -153,10 +153,6 @@ class GridRestClient:
                     if not filelist:
                         logger.warning(f"ZIP vacío para series {series_id}")
                         return None
-                    
-                    # Ordenamos los archivos por nombre para asegurar orden cronológico (game-1, game-2...)
-                    # Esto es importante para que el splitter funcione bien.
-                    filelist.sort()
 
                     for filename in filelist:
                         if filename.endswith(".jsonl"):
@@ -171,3 +167,4 @@ class GridRestClient:
             except Exception as e:
                 logger.error(f"Error procesando ZIP de GRID para {series_id}: {e}")
                 return None
+    # Falta añadir la descarga del archivo grid endstate
