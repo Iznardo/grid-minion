@@ -134,34 +134,40 @@ class GridRestClient:
     # ---------------------------------------------------------
 
     def get_grid_events(self, series_id: str) -> Optional[List[Dict[str, Any]]]:
-        """
-        Descarga y DESCOMPRIME los eventos de GRID (ZIP -> JSONL).
-        Equivalente a tu función 'download_grid_livestats'.
-        """
-        endpoint = f"/file-download/events/grid/series/{series_id}"
-        # Importante: stream=True porque bajamos un binario (zip)
-        response = self._request("GET", endpoint, stream=True)
+            """
+            Descarga y DESCOMPRIME los eventos de GRID (ZIP -> JSONL).
+            Lee TODOS los archivos .jsonl que vengan dentro del ZIP.
+            """
+            endpoint = f"/file-download/events/grid/series/{series_id}"
+            response = self._request("GET", endpoint, stream=True)
 
-        if not response:
-            return None
+            if not response:
+                return None
 
-        try:
-            with ZipFile(BytesIO(response.content)) as zip_file:
-                filelist = zip_file.namelist()
-                if not filelist:
-                    logger.warning(f"ZIP vacío para series {series_id}")
-                    return None
+            try:
+                combined_events = []
                 
-                # Asumimos que hay un archivo principal .jsonl dentro
-                filename = filelist[0]
-                with zip_file.open(filename) as infile:
-                    # Leemos bytes, decodificamos a utf-8 y separamos lineas
-                    lines = infile.read().decode('utf-8').strip().split('\n')
+                with ZipFile(BytesIO(response.content)) as zip_file:
+                    filelist = zip_file.namelist()
                     
-                    # Parseamos cada linea como JSON
-                    events = [json.loads(line) for line in lines if line.strip()]
-                    return events
+                    if not filelist:
+                        logger.warning(f"ZIP vacío para series {series_id}")
+                        return None
+                    
+                    # Ordenamos los archivos por nombre para asegurar orden cronológico (game-1, game-2...)
+                    # Esto es importante para que el splitter funcione bien.
+                    filelist.sort()
 
-        except Exception as e:
-            logger.error(f"Error procesando ZIP de GRID para {series_id}: {e}")
-            return None
+                    for filename in filelist:
+                        if filename.endswith(".jsonl"):
+                            # logger.info(f"Procesando archivo del ZIP: {filename}")
+                            with zip_file.open(filename) as infile:
+                                lines = infile.read().decode('utf-8').strip().split('\n')
+                                events = [json.loads(line) for line in lines if line.strip()]
+                                combined_events.extend(events)
+                
+                return combined_events
+
+            except Exception as e:
+                logger.error(f"Error procesando ZIP de GRID para {series_id}: {e}")
+                return None
