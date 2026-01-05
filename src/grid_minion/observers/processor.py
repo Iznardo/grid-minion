@@ -20,12 +20,13 @@ class GameEventProcessor:
                        grid_state: Optional[Dict] = None, 
                        riot_summary: Optional[Dict] = None, 
                        riot_livestats: Optional[List[Dict]] = None,
-                       grid_livestats: Optional[List[Dict]] = None): # <--- AÑADIDO
+                       grid_livestats: Optional[List[Dict]] = None):
         """
         Procesa múltiples fuentes de datos en el orden CORRECTO.
         """
         
-        # 1. Ingesta de Contexto GRID (Estado estático)
+        # Estos son json estáticos (no contienen evento, "creamos" un evento)
+        # No me termina de gustar que funcione así, explorar alternativas
         if grid_state:
             context_event = {
                 "source": "GRID_STATE",
@@ -34,7 +35,7 @@ class GameEventProcessor:
             }
             self._notify_all(context_event)
 
-        # 2. Ingesta de Contexto Riot Summary (Estado estático)
+        # también estático
         if riot_summary:
             context_event = {
                 "source": "RIOT_SUMMARY",
@@ -43,16 +44,11 @@ class GameEventProcessor:
             }
             self._notify_all(context_event)
 
-        # 3. Ingesta de la Timeline GRID (Drafts, etc)
-        # IMPORTANTE: Procesamos esto antes o intercalado con Riot, 
         # pero como el Draft suele ser al principio, está bien aquí.
         if grid_livestats:
             for event in grid_livestats:
-                # Marcamos la fuente por si algún observer necesita filtrar
-                # (aunque el DraftObserver mira el tipo de evento directamente)
                 self._notify_all(event)
 
-        # 4. Ingesta de la Timeline Riot (Wards, Kills, etc)
         if riot_livestats:
             for event in riot_livestats:
                 self._notify_all(event)

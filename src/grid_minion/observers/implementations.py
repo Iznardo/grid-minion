@@ -99,6 +99,8 @@ class TeamsObserver(Observer):
         p = self._registry.get(riot_id)
         return p.team_side if p else "UNKNOWN"
 
+# --- DRAFTS OBSERVER ---
+# Tendrá que cambiar, cambian los drafts
 class DraftObserver(Observer):
     def __init__(self):
         self.reset()
@@ -223,3 +225,4 @@ class DraftObserver(Observer):
                 "bans": self.red_bans
             }
         }
+

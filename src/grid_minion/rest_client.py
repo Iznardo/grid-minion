@@ -167,4 +167,4 @@ class GridRestClient:
             except Exception as e:
                 logger.error(f"Error procesando ZIP de GRID para {series_id}: {e}")
                 return None
-    # Falta añadir la descarga del archivo grid endstate
+    # Falta añadir la descarga del archivo grid endstate (yo en principio no lo utilizo pero debe estar aquí)

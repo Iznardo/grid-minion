@@ -2,8 +2,7 @@ from typing import List, Dict, Any
 
 def split_grid_series(events: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
     """
-    Divide la serie basándose en el ciclo: Draft -> Juego -> Fin.
-    Maneja la estructura anidada de GRID donde los eventos reales están dentro de una lista 'events'.
+    Divide la serie en las diferentes partidas basándose en el ciclo: Draft -> Juego -> Fin.
     """
     games = []
     current_game = []
