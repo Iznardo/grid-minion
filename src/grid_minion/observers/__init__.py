@@ -1,7 +1,7 @@
 from .base import Observer
 from .processor import GameEventProcessor
 from .implementations import (
-    TeamsObserver, DraftObserver, PostGameObserver
+    TeamsObserver, DraftObserver, PostGameObserver, ObjectiveKilledObserver, WardsObserver
 )
 
 __all__ = [
@@ -9,5 +9,7 @@ __all__ = [
     "GameEventProcessor",
     "TeamsObserver",
     "DraftObserver",
-    "PostGameObserver"
+    "PostGameObserver",
+    "ObjectiveKilledObserver",
+    "WardsObserver"
 ]
