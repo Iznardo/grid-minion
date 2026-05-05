@@ -1,0 +1,3 @@
+{"rfc461Schema": "game_info", "participants": [{"participantId": 1, "puuid": "puuid_player_1", "summonerName": "GX ManoloGap", "teamId": 100, "championName": "Rumble"}]}
+{"rfc461Schema": "epic_monster_kill", "gameTime": 327000, "killerTeamID": 200, "monsterType": "DRAGON", "dragonType": "chemtech"}
+{"rfc461Schema": "ward_placed", "gameTime": 28000, "placer": 1, "position": {"x": 8456, "z": 6204}, "wardType": "yellowTrinket"}

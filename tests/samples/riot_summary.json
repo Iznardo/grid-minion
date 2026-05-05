@@ -1,0 +1,37 @@
+{
+    "gameVersion": "16.8.12345",
+    "teams": [
+        {"teamId": 100, "win": true},
+        {"teamId": 200, "win": false}
+    ],
+    "participants": [
+        {
+            "participantId": 1,
+            "puuid": "puuid_player_1",
+            "summonerName": "GX ManoloGap",
+            "teamId": 100,
+            "championName": "Rumble",
+            "kills": 3,
+            "deaths": 2,
+            "assists": 12,
+            "goldEarned": 12447,
+            "totalDamageDealtToChampions": 15000,
+            "totalMinionsKilled": 200,
+            "neutralMinionsKilled": 60
+        },
+        {
+            "participantId": 6,
+            "puuid": "puuid_player_6",
+            "summonerName": "UCAM Kozi",
+            "teamId": 200,
+            "championName": "Ambessa",
+            "kills": 0,
+            "deaths": 4,
+            "assists": 2,
+            "goldEarned": 10347,
+            "totalDamageDealtToChampions": 8000,
+            "totalMinionsKilled": 210,
+            "neutralMinionsKilled": 50
+        }
+    ]
+}

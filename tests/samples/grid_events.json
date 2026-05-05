@@ -1,0 +1,37 @@
+[
+    {
+        "type": "series-started-game",
+        "state": {
+            "teams": [
+                {
+                    "id": "52457",
+                    "players": [
+                        {
+                            "id": "24716",
+                            "externalLinks": [{"dataProvider": {"name": "RIOT_PUUID"}, "externalEntity": {"id": "puuid_player_1"}}]
+                        }
+                    ]
+                },
+                {
+                    "id": "53134",
+                    "players": [
+                        {
+                            "id": "29421",
+                            "externalLinks": [{"dataProvider": {"name": "RIOT_PUUID"}, "externalEntity": {"id": "puuid_player_6"}}]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "type": "team-banned-character",
+        "actor": {"id": "52457"},
+        "target": {"state": {"name": "Jarvan IV"}}
+    },
+    {
+        "type": "team-picked-character",
+        "actor": {"id": "52457"},
+        "target": {"state": {"name": "Ambessa"}}
+    }
+]
