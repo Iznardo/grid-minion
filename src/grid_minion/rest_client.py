@@ -17,9 +17,22 @@ from .exceptions import (
 logger = logging.getLogger(__name__)
 
 class GridRestClient:
+    """
+    Cliente para interactuar con las APIs REST de GRID para la descarga de archivos.
+    
+    Permite descargar resúmenes de Riot (End State), timelines (LiveStats) y 
+    eventos comprimidos de GRID.
+    """
     BASE_URL = "https://api.grid.gg"
 
     def __init__(self, api_key: str, max_retries: int = 5):
+        """
+        Inicializa el cliente REST.
+
+        Args:
+            api_key (str): Tu clave de API de GRID.
+            max_retries (int): Número máximo de reintentos para Rate Limits o errores 5xx (default: 5).
+        """
         self.max_retries = max_retries
         self.session = requests.Session()
         self.session.headers.update({
@@ -30,11 +43,7 @@ class GridRestClient:
 
     def _request(self, method: str, endpoint: str, params: Optional[Dict] = None, stream: bool = False) -> Optional[requests.Response]:
         """
-        Método interno que gestiona:
-        1. Construcción de URL
-        2. Rate Limits (429)
-        3. Errores de Servidor (5xx)
-        4. Retorno de None si es 404 (Archivo no encontrado)
+        Método interno que gestiona la construcción de URL, reintentos y errores comunes.
         """
         url = f"{self.BASE_URL}/{endpoint.lstrip('/')}"
         
@@ -90,14 +99,15 @@ class GridRestClient:
         
         return None
 
-    # ---------------------------------------------------------
-    # 1. MÉTODOS DE UTILIDAD (Documentación GRID)
-    # ---------------------------------------------------------
-
     def get_available_files(self, series_id: str) -> List[Dict[str, Any]]:
         """
-        Consulta qué archivos están listos para descargar (Endpoint /file-download/list).
-        Útil para debugging, aunque no es obligatorio llamar antes de descargar.
+        Consulta qué archivos están listos para descargar para una serie.
+
+        Args:
+            series_id (str): ID de la serie de GRID.
+
+        Returns:
+            List[Dict[str, Any]]: Lista de metadatos de archivos disponibles.
         """
         endpoint = f"/file-download/list/{series_id}"
         response = self._request("GET", endpoint)
@@ -105,14 +115,16 @@ class GridRestClient:
             return response.json().get("files", [])
         return []
 
-    # ---------------------------------------------------------
-    # 2. MÉTODOS DE RIOT (Summary & LiveStats)
-    # ---------------------------------------------------------
-
     def get_riot_summary(self, series_id: str, game_number: int = 1) -> Optional[Dict[str, Any]]:
         """
-        Descarga el resumen del juego (End State).
-        Equivalente a tu función 'get_summary'.
+        Descarga el resumen del juego (End State) proporcionado por Riot.
+
+        Args:
+            series_id (str): ID de la serie de GRID.
+            game_number (int): Número de partida dentro de la serie (default: 1).
+
+        Returns:
+            Optional[Dict[str, Any]]: Diccionario con los datos finales de la partida.
         """
         endpoint = f"/file-download/end-state/riot/series/{series_id}/games/{game_number}/summary"
         response = self._request("GET", endpoint)
@@ -126,10 +138,15 @@ class GridRestClient:
 
     def get_riot_livestats(self, series_id: str, game_number: int = 1, parse_json: bool = True) -> Union[List[Dict], str, None]:
         """
-        Descarga los LiveStats de Riot (JSON Lines).
-        
-        :param parse_json: Si es True, devuelve una lista de diccionarios (eventos).
-                           Si es False, devuelve el texto crudo (str).
+        Descarga los LiveStats de Riot (Timeline en formato JSON Lines).
+
+        Args:
+            series_id (str): ID de la serie de GRID.
+            game_number (int): Número de partida (default: 1).
+            parse_json (bool): Si es True, parsea el JSONL a una lista de diccionarios.
+
+        Returns:
+            Union[List[Dict], str, None]: Lista de eventos, string crudo o None.
         """
         endpoint = f"/file-download/events/riot/series/{series_id}/games/{game_number}"
         response = self._request("GET", endpoint)
@@ -139,7 +156,6 @@ class GridRestClient:
 
         content = response.text
         if parse_json:
-            # Convertimos el JSONL (linea a linea) en lista de dicts
             try:
                 events = [json.loads(line) for line in content.strip().split("\n") if line.strip()]
                 return events
@@ -147,48 +163,49 @@ class GridRestClient:
                 raise GridDataError(f"Error parseando JSONL de Riot LiveStats: {e}")
         return content
 
-    # ---------------------------------------------------------
-    # 3. MÉTODOS DE GRID (Events & State)
-    # ---------------------------------------------------------
-
     def get_grid_events(self, series_id: str) -> Optional[List[Dict[str, Any]]]:
-            """
-            Descarga y DESCOMPRIME los eventos de GRID (ZIP -> JSONL).
-            Lee TODOS los archivos .jsonl que vengan dentro del ZIP.
-            """
-            endpoint = f"/file-download/events/grid/series/{series_id}"
-            response = self._request("GET", endpoint, stream=True)
+        """
+        Descarga y descomprime los eventos de GRID (ZIP conteniendo archivos JSONL).
 
-            if not response:
-                return None
+        Args:
+            series_id (str): ID de la serie de GRID.
 
-            try:
-                combined_events = []
-                
-                with ZipFile(BytesIO(response.content)) as zip_file:
-                    filelist = zip_file.namelist()
-                    
-                    if not filelist:
-                        logger.warning(f"ZIP vacío para series {series_id}")
-                        return None
+        Returns:
+            Optional[List[Dict[str, Any]]]: Lista combinada de todos los eventos encontrados.
+        """
+        endpoint = f"/file-download/events/grid/series/{series_id}"
+        response = self._request("GET", endpoint, stream=True)
 
-                    for filename in filelist:
-                        if filename.endswith(".jsonl"):
-                            # logger.info(f"Procesando archivo del ZIP: {filename}")
-                            with zip_file.open(filename) as infile:
-                                lines = infile.read().decode('utf-8').strip().split('\n')
-                                events = [json.loads(line) for line in lines if line.strip()]
-                                combined_events.extend(events)
-                
-                return combined_events
+        if not response:
+            return None
 
-            except Exception as e:
-                raise GridDataError(f"Error procesando ZIP de GRID para {series_id}: {e}")
+        try:
+            combined_events = []
+            with ZipFile(BytesIO(response.content)) as zip_file:
+                filelist = zip_file.namelist()
+                if not filelist:
+                    logger.warning(f"ZIP vacío para series {series_id}")
+                    return None
+
+                for filename in filelist:
+                    if filename.endswith(".jsonl"):
+                        with zip_file.open(filename) as infile:
+                            lines = infile.read().decode('utf-8').strip().split('\n')
+                            events = [json.loads(line) for line in lines if line.strip()]
+                            combined_events.extend(events)
+            return combined_events
+        except Exception as e:
+            raise GridDataError(f"Error procesando ZIP de GRID para {series_id}: {e}")
 
     def get_grid_endstate(self, series_id: str) -> Optional[Dict[str, Any]]:
         """
-        Descarga el estado final de la serie de GRID en formato JSON.
-        Contiene el Roster global y los PUUIDs de los jugadores.
+        Descarga el estado final de la serie de GRID (Rosters y PUUIDs).
+
+        Args:
+            series_id (str): ID de la serie de GRID.
+
+        Returns:
+            Optional[Dict[str, Any]]: Diccionario con el EndState de GRID.
         """
         endpoint = f"/file-download/end-state/grid/series/{series_id}"
         response = self._request("GET", endpoint)

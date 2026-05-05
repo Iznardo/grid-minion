@@ -5,11 +5,17 @@ from .base import Observer
 logger = logging.getLogger(__name__)
 
 class ObjectiveKilledObserver(Observer):
+    """
+    Observador encargado de registrar la muerte de monstruos épicos.
+    
+    Clasifica los objetivos en categorías (Dragones, Barones, Heraldos, 
+    Voidgrubs y Atakhans) y registra el tiempo y el equipo ejecutor.
+    """
     def __init__(self):
         self.reset()
 
     def reset(self):
-        """Reinicia las listas de objetivos."""
+        """Reinicia las listas de objetivos capturados."""
         self.dragons = []
         self.heralds = []
         self.barons = []
@@ -17,60 +23,42 @@ class ObjectiveKilledObserver(Observer):
         self.atakhans = []
 
     def notify_event(self, event: Dict[str, Any]):
-        # Filtramos por el esquema de evento de Riot LiveStats
+        """Procesa eventos de muerte de monstruos épicos de Riot LiveStats."""
         rfc_type = event.get("rfc461Schema")
-        event_type = event.get("eventType") # A veces viene aquí
-        
+        event_type = event.get("eventType")
         if rfc_type == "epic_monster_kill" or event_type == "epic_monster_kill":
             self._process_epic_monster(event)
 
     def _process_epic_monster(self, event: Dict[str, Any]):
-        """Procesa el evento de muerte de un monstruo épico."""
-        
-        # 1. Extracción de Datos Comunes
+        """Analiza y clasifica el monstruo épico asesinado."""
         try:
-            timestamp = event.get("gameTime", 0) / 1000 # Convertir ms a segundos
+            timestamp = event.get("gameTime", 0) / 1000
             team_id = event.get("killerTeamID")
             team = "BLUE" if team_id == 100 else "RED" if team_id == 200 else "NEUTRAL"
+            monster_type = str(event.get("monsterType", "")).lower()
             
-            monster_type = event.get("monsterType")
-            
-            # Estructura base del objeto
             objective_data = {
                 "time": timestamp,
                 "team": team,
-                "killer_id": event.get("killer") # Útil para saber qué jugador lo mató
+                "killer_id": event.get("killer")
             }
 
-            # 2. Clasificación por Tipo
-            # Normalizamos a minúsculas para evitar problemas (Riot a veces cambia mayúsculas/minúsculas)
-            m_type_lower = str(monster_type).lower()
-
-            if m_type_lower == "dragon":
-                # Los dragones tienen subtipo (hextech, infernal, chemtech, etc.)
+            if "dragon" in monster_type:
                 objective_data["type"] = event.get("dragonType", "unknown")
                 self.dragons.append(objective_data)
-                
-            elif m_type_lower == "riftherald":
+            elif "riftherald" in monster_type:
                 self.heralds.append(objective_data)
-                
-            elif m_type_lower == "baron":
+            elif "baron" in monster_type:
                 self.barons.append(objective_data)
-                
-            elif m_type_lower == "voidgrub":
-                self.voidgrubs.append(objective_data) # Ojo: voidgrubs suelen ser 3+3
-                
-            elif "atakhan" in m_type_lower: # "ThornboundAtakhan"
+            elif "voidgrub" in monster_type:
+                self.voidgrubs.append(objective_data)
+            elif "atakhan" in monster_type:
                 self.atakhans.append(objective_data)
-                
         except Exception:
-            # Si el evento viene mal formado, lo ignoramos silenciosamente
             pass
 
-    # --- API PÚBLICA (Opcional, para facilitar acceso unificado) ---
-    
     def get_all_objectives(self) -> Dict[str, List[Dict]]:
-        """Devuelve un diccionario con todos los objetivos capturados."""
+        """Devuelve un diccionario unificado con todos los objetivos de la partida."""
         return {
             "dragons": self.dragons,
             "heralds": self.heralds,

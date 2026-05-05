@@ -8,13 +8,22 @@ from .exceptions import GridAPIError, GridRateLimitError, GridNetworkError, Grid
 logger = logging.getLogger(__name__)
 
 class GridGraphQLClient:
+    """
+    Cliente para interactuar con las APIs de GraphQL de GRID.
+    
+    Proporciona métodos para consultar metadatos (Data Central) y el estado
+    en tiempo real de las series (Live Data).
+    """
     URL_CENTRAL = 'https://api.grid.gg/central-data/graphql'
     URL_LIVE = 'https://api.grid.gg/live-data-feed/series-state/graphql'
 
     def __init__(self, api_key: str, max_retries: int = 7):
         """
-        :param api_key: Tu clave de API de GRID.
-        :param max_retries: Subido a 7 para dar tiempo a que se rellene el bucket.
+        Inicializa el cliente GraphQL.
+
+        Args:
+            api_key (str): Tu clave de API de GRID.
+            max_retries (int): Número máximo de reintentos para Rate Limits (default: 7).
         """
         self.max_retries = max_retries
         self.session = requests.Session()
@@ -25,7 +34,7 @@ class GridGraphQLClient:
 
     def _execute(self, url: str, query: str, variables: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Ejecuta la petición gestionando Rate Limits de forma robusta.
+        Ejecuta una petición GraphQL con lógica de reintentos y manejo de errores.
         """
         payload = {"query": query}
         if variables:
@@ -96,11 +105,30 @@ class GridGraphQLClient:
         # pero por seguridad:
         raise GridError("Error crítico: Fallo en la lógica de reintentos.")
 
-    # --- RESTO DEL CÓDIGO SIN CAMBIOS ---
     def query_central(self, query_body: str, variables: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        Ejecuta una consulta en GRID Data Central (Metadatos).
+
+        Args:
+            query_body (str): Cuerpo de la consulta GraphQL.
+            variables (Optional[Dict]): Variables para la consulta.
+
+        Returns:
+            Dict[str, Any]: Datos devueltos por la API.
+        """
         return self._execute(self.URL_CENTRAL, query_body, variables)
 
     def query_live(self, query_body: str, variables: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        Ejecuta una consulta en GRID Live Data (Series State).
+
+        Args:
+            query_body (str): Cuerpo de la consulta GraphQL.
+            variables (Optional[Dict]): Variables para la consulta.
+
+        Returns:
+            Dict[str, Any]: Datos devueltos por la API.
+        """
         return self._execute(self.URL_LIVE, query_body, variables)
 
     def get_series(self, 
@@ -111,6 +139,22 @@ class GridGraphQLClient:
                    page_games: int = 25,
                    team_ids: Union[str, List[str]] = None, 
                    tournament_ids: Union[str, List[str]] = None) -> List[str]:
+        """
+        Obtiene una lista de IDs de series filtradas por diversos criterios.
+        Maneja automáticamente la paginación de la API.
+
+        Args:
+            start_time (Optional[str]): Fecha de inicio (ISO 8601).
+            end_time (Optional[str]): Fecha de fin (ISO 8601).
+            game_type (Optional[str]): Tipo de partida (ej: 'COMPETITIVE').
+            title_id (Union[int, List[int]]): ID del juego (default: 3 para LoL).
+            page_games (int): Número de series por página (max: 25).
+            team_ids (Optional[Union[str, List[str]]]): IDs de equipos.
+            tournament_ids (Optional[Union[str, List[str]]]): IDs de torneos.
+
+        Returns:
+            List[str]: Lista de IDs de series encontrados.
+        """
         
         all_ids = []
         filter_parts = ""
@@ -181,6 +225,15 @@ class GridGraphQLClient:
         return all_ids
 
     def get_tournament_ids_by_name(self, parent_names: List[str]) -> List[str]:
+        """
+        Busca IDs de torneos basándose en una lista de nombres o fragmentos de nombres.
+
+        Args:
+            parent_names (List[str]): Lista de nombres a buscar (ej: ['LEC', 'LVP']).
+
+        Returns:
+            List[str]: Lista de IDs de torneos que coinciden con la búsqueda.
+        """
         found_ids = set()
         for name in parent_names:
             query = f"""
@@ -203,6 +256,15 @@ class GridGraphQLClient:
         return list(found_ids)
 
     def get_series_state(self, series_id: str) -> Dict[str, Any]:
+        """
+        Obtiene el estado actual de una serie (Live Data).
+
+        Args:
+            series_id (str): ID de la serie de GRID.
+
+        Returns:
+            Dict[str, Any]: Diccionario con el estado de la serie y sus partidas.
+        """
         query = f"""
         query {{
             seriesState(id: {series_id}) {{
