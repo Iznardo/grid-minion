@@ -1,5 +1,8 @@
+import logging
 from typing import List, Dict, Any, Optional
 from .base import Observer
+
+logger = logging.getLogger(__name__)
 
 class GameEventProcessor:
     def __init__(self):

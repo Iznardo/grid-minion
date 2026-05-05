@@ -1,7 +1,10 @@
 import requests
 import json
 import time
+import logging
 from typing import List, Dict, Any, Optional, Union
+
+logger = logging.getLogger(__name__)
 
 class GridGraphQLClient:
     URL_CENTRAL = 'https://api.grid.gg/central-data/graphql'
@@ -43,7 +46,7 @@ class GridGraphQLClient:
                     if attempt == self.max_retries:
                          raise Exception(f"Rate Limit HTTP 429 persistente tras {self.max_retries} intentos.")
 
-                    print(f"[Grid Minion] HTTP 429. Esperando {wait_time:.2f}s... ({attempt}/{self.max_retries})")
+                    logger.warning(f"HTTP 429. Esperando {wait_time:.2f}s... ({attempt}/{self.max_retries})")
                     time.sleep(wait_time)
                     continue 
 
@@ -70,7 +73,7 @@ class GridGraphQLClient:
                         if attempt == self.max_retries:
                             raise Exception(f"Rate Limit GraphQL persistente tras {self.max_retries} intentos. GRID dice: {error_msg}")
 
-                        print(f"[Grid Minion] Rate Limit GraphQL detectado. Esperando {default_wait:.2f}s... ({attempt}/{self.max_retries})")
+                        logger.warning(f"Rate Limit GraphQL detectado. Esperando {default_wait:.2f}s... ({attempt}/{self.max_retries})")
                         time.sleep(default_wait)
                         continue # Reintentamos
 
@@ -84,7 +87,7 @@ class GridGraphQLClient:
                 if attempt == self.max_retries:
                     raise Exception(f"Error de conexión Final tras {self.max_retries} intentos: {e}")
                 
-                print(f"[Grid Minion] Error de red ({e}). Reintentando en {default_wait:.2f}s...")
+                logger.warning(f"Error de red ({e}). Reintentando en {default_wait:.2f}s...")
                 time.sleep(default_wait)
                 continue
 

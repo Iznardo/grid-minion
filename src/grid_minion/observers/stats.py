@@ -1,6 +1,9 @@
+import logging
 from typing import Dict, Any, List, Optional
 from .base import Observer
 from .teams import TeamsObserver
+
+logger = logging.getLogger(__name__)
 
 class PostGameObserver(Observer):
     def __init__(self):

@@ -1,5 +1,8 @@
+import logging
 from typing import Dict, Any, List, Optional
 from .base import Observer
+
+logger = logging.getLogger(__name__)
 
 class DraftObserver(Observer):
     def __init__(self):

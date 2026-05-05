@@ -1,4 +1,7 @@
+import logging
 from typing import List, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 def split_grid_series(events: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
     """

@@ -1,5 +1,8 @@
+import logging
 from typing import Dict, Any, List, Optional
 from .base import Observer
+
+logger = logging.getLogger(__name__)
 
 class Participant:
     """Representa a un jugador en el contexto de la partida."""
@@ -94,7 +97,7 @@ class TeamsObserver(Observer):
                             participant.grid_team_id = team_id
 
         if extracted_count > 0:
-            print(f"      [DEBUG] 🎯 ¡Cazados {extracted_count} PUUIDs en un evento de GRID!")
+            logger.debug(f"🎯 ¡Cazados {extracted_count} PUUIDs en un evento de GRID!")
 
     def _process_participants(self, participants_list: List[Dict]):
         if not participants_list:
@@ -115,7 +118,7 @@ class TeamsObserver(Observer):
             puuid = p.get("puuid", "").lower()
             
             if not puuid:
-                print(f"      [DEBUG] ⚠️ Riot no ha enviado el PUUID para {raw_name}")
+                logger.warning(f"⚠️ Riot no ha enviado el PUUID para {raw_name}")
 
             if p_id is not None and raw_name != "Unknown":
                 # Si el participante ya existe, solo actualizamos datos si es necesario
