@@ -168,37 +168,18 @@ class GridRestClient:
                 logger.error(f"Error procesando ZIP de GRID para {series_id}: {e}")
                 return None
     # Falta añadir la descarga del archivo grid endstate (yo en principio no lo utilizo pero debe estar aquí)
-    def get_grid_events(self, series_id: str) -> Optional[List[Dict[str, Any]]]:
+    def get_grid_endstate(self, series_id: str) -> Optional[Dict[str, Any]]:
         """
-        Descarga y DESCOMPRIME los eventos de GRID (ZIP -> JSONL).
-        Lee TODOS los archivos .jsonl que vengan dentro del ZIP.
+        Descarga el estado final de la serie de GRID en formato JSON.
+        Contiene el Roster global y los PUUIDs de los jugadores.
         """
-        endpoint = f"/file-download/events/grid/series/{series_id}"
-        response = self._request("GET", endpoint, stream=True)
-
-        if not response:
-            return None
-
-        try:
-            combined_events = []
-            
-            with ZipFile(BytesIO(response.content)) as zip_file:
-                filelist = zip_file.namelist()
-                
-                if not filelist:
-                    logger.warning(f"ZIP vacío para series {series_id}")
-                    return None
-
-                for filename in filelist:
-                    if filename.endswith(".jsonl"):
-                        # logger.info(f"Procesando archivo del ZIP: {filename}")
-                        with zip_file.open(filename) as infile:
-                            lines = infile.read().decode('utf-8').strip().split('\n')
-                            events = [json.loads(line) for line in lines if line.strip()]
-                            combined_events.extend(events)
-            
-            return combined_events
-
-        except Exception as e:
-            logger.error(f"Error procesando ZIP de GRID para {series_id}: {e}")
-            return None
+        endpoint = f"/file-download/end-state/grid/series/{series_id}"
+        response = self._request("GET", endpoint)
+        
+        if response:
+            try:
+                return response.json()
+            except json.JSONDecodeError as e:
+                logger.error(f"Error parseando JSON del EndState de GRID para {series_id}: {e}")
+                return None
+        return None
