@@ -5,10 +5,16 @@ import logging
 from zipfile import ZipFile
 from io import BytesIO
 from typing import Dict, Any, Optional, List, Union
+from .exceptions import (
+    GridAPIError, 
+    GridAuthError, 
+    GridRateLimitError, 
+    GridResourceNotFoundError, 
+    GridNetworkError, 
+    GridDataError
+)
 
-# Configuración básica de logging para que veas lo que pasa
-logger = logging.getLogger("GridMinionREST")
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class GridRestClient:
     BASE_URL = "https://api.grid.gg"
@@ -43,32 +49,42 @@ class GridRestClient:
                 if response.status_code == 429:
                     retry_after = response.headers.get("Retry-After")
                     wait_time = float(retry_after) if retry_after else default_wait
-                    logger.warning(f"[REST] HTTP 429. Esperando {wait_time:.2f}s... ({attempt}/{self.max_retries})")
+                    
+                    if attempt == self.max_retries:
+                        raise GridRateLimitError(f"Rate Limit HTTP 429 persistente tras {self.max_retries} intentos.", status_code=429)
+
+                    logger.warning(f"HTTP 429. Esperando {wait_time:.2f}s... ({attempt}/{self.max_retries})")
                     time.sleep(wait_time)
                     continue
 
                 # --- 2. GESTIÓN DE ARCHIVO NO ENCONTRADO (404) ---
                 if response.status_code == 404:
-                    logger.warning(f"[REST] 404 No encontrado: {endpoint}")
-                    return None # Devolvemos None para que el método específico decida qué hacer
+                    logger.warning(f"404 No encontrado: {endpoint}")
+                    return None
 
-                # --- 3. GESTIÓN DE ERRORES DE SERVIDOR (5xx) ---
+                # --- 3. GESTIÓN DE ERRORES DE AUTENTICACIÓN (401, 403) ---
+                if response.status_code in [401, 403]:
+                    raise GridAuthError(f"Error de autenticación {response.status_code}: Verifique su API Key.", status_code=response.status_code)
+
+                # --- 4. GESTIÓN DE ERRORES DE SERVIDOR (5xx) ---
                 if response.status_code >= 500:
-                    logger.warning(f"[REST] Error Servidor {response.status_code}. Reintentando en {default_wait}s...")
+                    if attempt == self.max_retries:
+                         raise GridAPIError(f"Error de servidor persistente {response.status_code}.", status_code=response.status_code)
+                    
+                    logger.warning(f"Error Servidor {response.status_code}. Reintentando en {default_wait}s...")
                     time.sleep(default_wait)
                     continue
 
-                # Si llegamos aquí y no es 200 OK, lanzamos error
+                # Si llegamos aquí y no es 200 OK, lanzamos error genérico de API
                 response.raise_for_status()
                 
                 return response
 
             except requests.exceptions.RequestException as e:
                 if attempt == self.max_retries:
-                    logger.error(f"[REST] Error final tras {self.max_retries} intentos: {e}")
-                    raise e
+                    raise GridNetworkError(f"Error de conexión final tras {self.max_retries} intentos: {e}")
                 
-                logger.warning(f"[REST] Error de red ({e}). Reintentando...")
+                logger.warning(f"Error de red ({e}). Reintentando...")
                 time.sleep(default_wait)
                 continue
         
@@ -102,7 +118,10 @@ class GridRestClient:
         response = self._request("GET", endpoint)
         
         if response:
-            return response.json()
+            try:
+                return response.json()
+            except json.JSONDecodeError as e:
+                raise GridDataError(f"Error parseando JSON de Riot Summary: {e}")
         return None
 
     def get_riot_livestats(self, series_id: str, game_number: int = 1, parse_json: bool = True) -> Union[List[Dict], str, None]:
@@ -125,8 +144,7 @@ class GridRestClient:
                 events = [json.loads(line) for line in content.strip().split("\n") if line.strip()]
                 return events
             except json.JSONDecodeError as e:
-                logger.error(f"Error parseando JSONL de Riot: {e}")
-                return None
+                raise GridDataError(f"Error parseando JSONL de Riot LiveStats: {e}")
         return content
 
     # ---------------------------------------------------------
@@ -165,9 +183,8 @@ class GridRestClient:
                 return combined_events
 
             except Exception as e:
-                logger.error(f"Error procesando ZIP de GRID para {series_id}: {e}")
-                return None
-    # Falta añadir la descarga del archivo grid endstate (yo en principio no lo utilizo pero debe estar aquí)
+                raise GridDataError(f"Error procesando ZIP de GRID para {series_id}: {e}")
+
     def get_grid_endstate(self, series_id: str) -> Optional[Dict[str, Any]]:
         """
         Descarga el estado final de la serie de GRID en formato JSON.
@@ -180,6 +197,5 @@ class GridRestClient:
             try:
                 return response.json()
             except json.JSONDecodeError as e:
-                logger.error(f"Error parseando JSON del EndState de GRID para {series_id}: {e}")
-                return None
+                raise GridDataError(f"Error parseando JSON del EndState de GRID para {series_id}: {e}")
         return None

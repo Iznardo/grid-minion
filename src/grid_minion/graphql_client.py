@@ -3,6 +3,7 @@ import json
 import time
 import logging
 from typing import List, Dict, Any, Optional, Union
+from .exceptions import GridAPIError, GridRateLimitError, GridNetworkError, GridError
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class GridGraphQLClient:
                     wait_time = float(retry_after) if retry_after else default_wait
                     
                     if attempt == self.max_retries:
-                         raise Exception(f"Rate Limit HTTP 429 persistente tras {self.max_retries} intentos.")
+                         raise GridRateLimitError(f"Rate Limit HTTP 429 persistente tras {self.max_retries} intentos.", status_code=429)
 
                     logger.warning(f"HTTP 429. Esperando {wait_time:.2f}s... ({attempt}/{self.max_retries})")
                     time.sleep(wait_time)
@@ -71,21 +72,21 @@ class GridGraphQLClient:
                     if is_rate_limit:
                         # Si es el último intento, lanzamos error y no esperamos más
                         if attempt == self.max_retries:
-                            raise Exception(f"Rate Limit GraphQL persistente tras {self.max_retries} intentos. GRID dice: {error_msg}")
+                            raise GridRateLimitError(f"Rate Limit GraphQL persistente tras {self.max_retries} intentos. GRID dice: {error_msg}", details=data['errors'])
 
                         logger.warning(f"Rate Limit GraphQL detectado. Esperando {default_wait:.2f}s... ({attempt}/{self.max_retries})")
                         time.sleep(default_wait)
                         continue # Reintentamos
 
                     # Error legítimo de sintaxis o lógica (no se reintenta)
-                    raise Exception(f"GraphQL Error: {data['errors']}")
+                    raise GridAPIError(f"GraphQL Error: {data['errors']}", details=data['errors'])
                 
                 # ÉXITO
                 return data.get("data", {})
 
             except requests.exceptions.RequestException as e:
                 if attempt == self.max_retries:
-                    raise Exception(f"Error de conexión Final tras {self.max_retries} intentos: {e}")
+                    raise GridNetworkError(f"Error de conexión Final tras {self.max_retries} intentos: {e}")
                 
                 logger.warning(f"Error de red ({e}). Reintentando en {default_wait:.2f}s...")
                 time.sleep(default_wait)
@@ -93,7 +94,7 @@ class GridGraphQLClient:
 
         # Este punto teóricamente es inalcanzable por los 'raise' en el último intento,
         # pero por seguridad:
-        raise Exception("Error crítico: Fallo en la lógica de reintentos.")
+        raise GridError("Error crítico: Fallo en la lógica de reintentos.")
 
     # --- RESTO DEL CÓDIGO SIN CAMBIOS ---
     def query_central(self, query_body: str, variables: Optional[Dict] = None) -> Dict[str, Any]:
