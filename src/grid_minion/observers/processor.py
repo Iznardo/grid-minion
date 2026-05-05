@@ -5,16 +5,30 @@ from .base import Observer
 logger = logging.getLogger(__name__)
 
 class GameEventProcessor:
+    """
+    Orquestador principal que distribuye eventos a los observadores registrados.
+
+    Permite procesar eventos individuales o paquetes (bundles) de múltiples fuentes
+    (GRID y Riot) asegurando un orden lógico de procesamiento.
+    """
     def __init__(self):
         self._observers: List[Observer] = []
 
     def attach(self, observer: Observer):
-        """Registra un observador para recibir eventos."""
+        """
+        Registra un observador para recibir eventos.
+
+        Args:
+            observer (Observer): Instancia de un observador.
+        """
         self._observers.append(observer)
 
     def process_events(self, events: List[Dict[str, Any]]):
         """
-        Itera sobre una lista simple de eventos.
+        Itera sobre una lista simple de eventos y notifica a los observadores.
+
+        Args:
+            events (List[Dict[str, Any]]): Lista de eventos crudos.
         """
         for event in events:
             self._notify_all(event)
@@ -25,11 +39,21 @@ class GameEventProcessor:
                        riot_livestats: Optional[List[Dict]] = None,
                        grid_livestats: Optional[List[Dict]] = None):
         """
-        Procesa múltiples fuentes de datos en el orden CORRECTO.
+        Procesa múltiples fuentes de datos en el orden lógico correcto.
+
+        El orden es:
+        1. GRID State (Contexto global)
+        2. Riot Summary (End state si está disponible)
+        3. GRID LiveStats (Draft y eventos de GRID)
+        4. Riot LiveStats (Timeline detallado)
+
+        Args:
+            grid_state (Optional[Dict]): Datos del estado global de GRID.
+            riot_summary (Optional[Dict]): Resumen final de Riot.
+            riot_livestats (Optional[List[Dict]]): Eventos del timeline de Riot.
+            grid_livestats (Optional[List[Dict]]): Eventos de la partida de GRID.
         """
-        
-        # Estos son json estáticos (no contienen evento, "creamos" un evento)
-        # No me termina de gustar que funcione así, explorar alternativas
+
         if grid_state:
             context_event = {
                 "source": "GRID_STATE",
@@ -38,7 +62,6 @@ class GameEventProcessor:
             }
             self._notify_all(context_event)
 
-        # también estático
         if riot_summary:
             context_event = {
                 "source": "RIOT_SUMMARY",
@@ -47,7 +70,6 @@ class GameEventProcessor:
             }
             self._notify_all(context_event)
 
-        # pero como el Draft suele ser al principio, está bien aquí.
         if grid_livestats:
             for event in grid_livestats:
                 self._notify_all(event)
