@@ -1,36 +1,36 @@
-# Grid Minion 🚀
+# Grid Minion
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-**Grid Minion** es un cliente de Python ligero y robusto para interactuar con las APIs de [GRID.gg](https://grid.gg) (Data Central y Live Data), diseñado específicamente para analistas y desarrolladores de **League of Legends**.
+Grid Minion es un cliente de Python ligero y robusto para interactuar con las APIs de GRID.gg (Data Central y Live Data), diseñado específicamente para analistas y desarrolladores de League of Legends.
 
-Esta librería no solo facilita la descarga de datos, sino que implementa un sistema de **Observadores** que procesa y cruza automáticamente los datos de GRID y Riot (PUUIDs, KDA, Objetivos, Visión) en tiempo real o diferido.
+Esta libreria no solo facilita la descarga de datos, sino que implementa un sistema de Observadores que procesa y cruza automaticamente los datos de GRID y Riot (PUUIDs, KDA, Objetivos, Vision) en tiempo real o diferido.
 
-## ✨ Características
+## Caracteristicas
 
-*   **Clientes Especializados**:
-    *   `GridGraphQLClient`: Consulta de metadatos, torneos y series con paginación automática.
-    *   `GridRestClient`: Descarga de archivos (Summary, LiveStats, GRID Events) con gestión de descompresión ZIP.
-*   **Sistema de Observadores**: Procesa eventos complejos y mantiene el estado de la partida (Drafts, Inventarios, Posicionamiento).
-*   **Robustez Industrial**:
-    *   Gestión avanzada de **Rate Limits** (HTTP 429 y GraphQL body errors) con reintentos exponenciales.
-    *   Jerarquía de **excepciones personalizadas** (`GridRateLimitError`, `GridAuthError`, etc.).
-    *   Sistema de **logging** integrado.
+*   Clientes Especializados:
+    *   GridGraphQLClient: Consulta de metadatos, torneos y series con paginacion automatica.
+    *   GridRestClient: Descarga de archivos (Summary, LiveStats, GRID Events) con gestion de descompresion ZIP.
+*   Sistema de Observadores: Procesa eventos complejos y mantiene el estado de la partida (Drafts, Inventarios, Posicionamiento).
+*   Robustez Industrial:
+    *   Gestion avanzada de Rate Limits (HTTP 429 y GraphQL body errors) con reintentos exponenciales.
+    *   Jerarquia de excepciones personalizadas (GridRateLimitError, GridAuthError, etc.).
+    *   Sistema de logging integrado.
 
-## 📦 Instalación
+## Instalacion
 
 ```bash
 pip install grid-minion
 ```
-*(O clonando el repo para desarrollo)*
+(O clonando el repo para desarrollo)
 ```bash
 git clone https://github.com/tu_usuario/pyGrid.git
 cd pyGrid
 pip install -e .
 ```
 
-## 🚀 Inicio Rápido
+## Inicio Rapido
 
 ### 1. Consultar Series (GraphQL)
 ```python
@@ -46,7 +46,7 @@ series_ids = client.get_series(
 ```
 
 ### 2. Descargar y Procesar Partidas (Observers)
-El corazón de la librería es el `GameEventProcessor`. Puedes enganchar diferentes observadores para obtener exactamente los datos que necesitas.
+El corazon de la libreria es el GameEventProcessor. Puedes enganchar diferentes observadores para obtener exactamente los datos que necesitas.
 
 ```python
 from grid_minion import GridRestClient, split_grid_series
@@ -83,7 +83,7 @@ print(f"Draft: {draft_obs.get_draft()}")
 print(f"Wards totales: {len(wards_obs.get_wards())}")
 ```
 
-## 🛠️ Manejo de Errores
+## Manejo de Errores
 
 ```python
 from grid_minion import GridRateLimitError, GridAuthError
@@ -93,16 +93,16 @@ try:
 except GridRateLimitError:
     print("Se agotaron los reintentos de velocidad.")
 except GridAuthError:
-    print("API Key inválida.")
+    print("API Key invalida.")
 ```
 
-## 🧪 Tests
+## Tests
 
-Ejecutar la suite de pruebas unitarias e integración:
+Ejecutar la suite de pruebas unitarias e integracion:
 ```bash
 python -m unittest discover tests
 ```
 
-## 📄 Licencia
+## Licencia
 
-Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto esta bajo la Licencia MIT. Consulta el archivo LICENSE para mas detalles.

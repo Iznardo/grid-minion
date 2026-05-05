@@ -71,7 +71,7 @@ class TestGridGraphQLClient(unittest.TestCase):
 
         self.assertEqual(mock_post.call_count, 2)
         self.assertEqual(ids, ["ID_A", "ID_B"])
-        print("\n✅ Test de Paginación superado (Grid Minion)")
+        print("\nTest de Paginacion superado (Grid Minion)")
 
 if __name__ == '__main__':
     unittest.main()

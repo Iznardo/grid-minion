@@ -8,7 +8,7 @@ class Participant:
     """
     Representa a un jugador en el contexto de una partida de LoL.
     
-    Almacena tanto la información de Riot (summoner_name, team_side) como 
+    Almacena tanto la informacion de Riot (summoner_name, team_side) como 
     los identificadores internos de GRID tras realizar el cruce de datos.
     """
     def __init__(self, riot_id: int, name: str, team_id: int, champion: str):
@@ -29,7 +29,7 @@ class TeamsObserver(Observer):
     """
     Observador encargado de gestionar la lista de participantes y sus equipos.
     
-    Su función principal es realizar el cruce definitivo entre los IDs de Riot
+    Su funcion principal es realizar el cruce definitivo entre los IDs de Riot
     y los IDs de GRID utilizando el PUUID como clave de enlace.
     """
     def __init__(self):
@@ -89,14 +89,14 @@ class TeamsObserver(Observer):
                         "grid_team_id": team_id
                     }
                     extracted_count += 1
-                    # Actualización retroactiva
+                    # Actualizacion retroactiva
                     for participant in self._registry.values():
                         if getattr(participant, "puuid", "") == puuid:
                             participant.grid_player_id = grid_id
                             participant.grid_team_id = team_id
 
         if extracted_count > 0:
-            logger.debug(f"🎯 ¡Cazados {extracted_count} PUUIDs en un evento de GRID!")
+            logger.debug(f"Cazados {extracted_count} PUUIDs en un evento de GRID")
 
     def _process_participants(self, participants_list: List[Dict]):
         """Procesa la lista de participantes de Riot y aplica el cruce con GRID."""
@@ -115,7 +115,7 @@ class TeamsObserver(Observer):
             puuid = p.get("puuid", "").lower()
             
             if not puuid:
-                logger.warning(f"⚠️ Riot no ha enviado el PUUID para {raw_name}")
+                logger.warning(f"Riot no ha enviado el PUUID para {raw_name}")
 
             if p_id is not None and raw_name != "Unknown":
                 if p_id not in self._registry:
