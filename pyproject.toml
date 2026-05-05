@@ -20,6 +20,16 @@ dependencies = [
     "requests>=2.28.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "python-dotenv>=1.0.0",
+    "build",
+    "twine",
+]
+test = [
+    "python-dotenv>=1.0.0",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/tu_usuario/grid-minion"
 
