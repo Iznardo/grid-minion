@@ -13,7 +13,7 @@ Esta libreria no solo facilita la descarga de datos, sino que implementa un sist
     *   GridGraphQLClient: Consulta de metadatos, torneos y series con paginacion automatica.
     *   GridRestClient: Descarga de archivos (Summary, LiveStats, GRID Events) con gestion de descompresion ZIP.
 *   Sistema de Observadores: Procesa eventos complejos y mantiene el estado de la partida (Drafts, Inventarios, Posicionamiento).
-*   Robustez Industrial:
+*   Robustez:
     *   Gestion avanzada de Rate Limits (HTTP 429 y GraphQL body errors) con reintentos exponenciales.
     *   Jerarquia de excepciones personalizadas (GridRateLimitError, GridAuthError, etc.).
     *   Sistema de logging integrado.
