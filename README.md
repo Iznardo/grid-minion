@@ -25,8 +25,8 @@ pip install grid-minion
 ```
 (O clonando el repo para desarrollo)
 ```bash
-git clone https://github.com/tu_usuario/pyGrid.git
-cd pyGrid
+git clone https://github.com/Iznardo/grid-minion.git
+cd grid-minion
 pip install -e .
 ```
 
