@@ -81,4 +81,11 @@ class GameEventProcessor:
     def _notify_all(self, event: Dict[str, Any]):
         """Helper privado para notificar a todos los observadores."""
         for observer in self._observers:
-            observer.notify_event(event)
+            try:
+                observer.notify_event(event)
+            except Exception:
+                logger.exception(
+                    "Observer %s falló procesando evento '%s'",
+                    type(observer).__name__,
+                    event.get("rfc461Schema", event.get("type", "?"))
+                )
