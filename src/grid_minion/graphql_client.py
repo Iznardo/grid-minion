@@ -139,8 +139,8 @@ class GridGraphQLClient:
                    game_type: Optional[str] = None,
                    title_id: Union[int, List[int]] = 3, 
                    page_games: int = 25,
-                   team_ids: Union[str, List[str]] = None, 
-                   tournament_ids: Union[str, List[str]] = None) -> List[str]:
+                   team_ids: Optional[Union[str, List[str]]] = None,
+                   tournament_ids: Optional[Union[str, List[str]]] = None) -> List[str]:
         """
         Obtiene una lista de IDs de series filtradas por diversos criterios.
         Maneja automáticamente la paginación de la API.
