@@ -176,7 +176,7 @@ class GridRestClient:
             Optional[List[Dict[str, Any]]]: Lista combinada de todos los eventos encontrados.
         """
         endpoint = f"/file-download/events/grid/series/{series_id}"
-        response = self._request("GET", endpoint, stream=True)
+        response = self._request("GET", endpoint)
 
         if not response:
             return None
