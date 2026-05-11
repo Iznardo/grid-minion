@@ -96,6 +96,20 @@ except GridAuthError:
     print("API Key invalida.")
 ```
 
+## Orden de attach()
+
+El orden en que registras los observers con `attach()` importa. Un observer que depende de otro debe registrarse **después**:
+
+```python
+processor.attach(teams_obs)       # sin dependencias
+processor.attach(draft_obs)       # sin dependencias
+processor.attach(stats_obs)       # usa TeamsObserver en get_game_stats
+processor.attach(objectives_obs)  # sin dependencias
+processor.attach(wards_obs)       # depende de TeamsObserver (inyectado en __init__)
+```
+
+`WardsObserver` recibe la referencia a `TeamsObserver` en su constructor, pero si se attachase antes de que `TeamsObserver` procese los primeros eventos, los wards iniciales podrían no tener nombre de jugador resuelto.
+
 ## Tests
 
 Ejecutar la suite de pruebas unitarias e integracion:

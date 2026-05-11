@@ -18,6 +18,15 @@ class GameEventProcessor:
         """
         Registra un observador para recibir eventos.
 
+        IMPORTANTE: el orden de attach() importa. Los observers que dependen
+        de otro deben registrarse DESPUÉS de sus dependencias:
+
+            processor.attach(teams_obs)       # sin dependencias
+            processor.attach(draft_obs)       # sin dependencias
+            processor.attach(stats_obs)       # usa TeamsObserver en get_game_stats
+            processor.attach(objectives_obs)  # sin dependencias
+            processor.attach(wards_obs)       # recibe TeamsObserver en __init__
+
         Args:
             observer (Observer): Instancia de un observador.
         """
