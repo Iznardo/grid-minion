@@ -1,5 +1,5 @@
 import unittest
-from src.grid_minion.utils import split_grid_series
+from grid_minion.utils import split_grid_series
 
 class TestUtils(unittest.TestCase):
     def test_split_grid_series_basic(self):

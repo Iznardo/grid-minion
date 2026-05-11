@@ -1,8 +1,8 @@
 import unittest
 import json
 import os
-from src.grid_minion.observers import (
-    GameEventProcessor, TeamsObserver, DraftObserver, 
+from grid_minion.observers import (
+    GameEventProcessor, TeamsObserver, DraftObserver,
     PostGameObserver, ObjectiveKilledObserver, WardsObserver
 )
 
