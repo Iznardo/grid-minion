@@ -27,8 +27,9 @@ class TestGridGraphQLClient(unittest.TestCase):
         
         self.assertEqual(result["series"]["id"], "123")
         mock_post.assert_called_with(
-            self.client.URL_CENTRAL, 
-            json={'query': 'query { test }'}
+            self.client.URL_CENTRAL,
+            json={'query': 'query { test }'},
+            timeout=(10, 60)
         )
 
     @patch('src.grid_minion.graphql_client.requests.Session.post')

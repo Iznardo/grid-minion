@@ -25,15 +25,17 @@ class GridRestClient:
     """
     BASE_URL = "https://api.grid.gg"
 
-    def __init__(self, api_key: str, max_retries: int = 5):
+    def __init__(self, api_key: str, max_retries: int = 5, timeout: tuple = (10, 60)):
         """
         Inicializa el cliente REST.
 
         Args:
             api_key (str): Tu clave de API de GRID.
             max_retries (int): Número máximo de reintentos para Rate Limits o errores 5xx (default: 5).
+            timeout (tuple): Timeout (connect, read) en segundos (default: (10, 60)).
         """
         self.max_retries = max_retries
+        self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({
             "x-api-key": api_key,
@@ -49,10 +51,10 @@ class GridRestClient:
         
         for attempt in range(1, self.max_retries + 1):
             try:
-                # Estrategia de espera (Base 5s)
-                default_wait = 5 + attempt 
+                # Backoff exponencial (5s, 7.5s, 11.25s, 16.9s, 25.3s)
+                default_wait = 5 * (1.5 ** (attempt - 1))
 
-                response = self.session.request(method, url, params=params, stream=stream)
+                response = self.session.request(method, url, params=params, stream=stream, timeout=self.timeout)
 
                 # --- 1. GESTIÓN RATE LIMIT (429) ---
                 if response.status_code == 429:
