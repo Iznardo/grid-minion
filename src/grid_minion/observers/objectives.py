@@ -55,7 +55,7 @@ class ObjectiveKilledObserver(Observer):
             elif "atakhan" in monster_type:
                 self.atakhans.append(objective_data)
         except Exception:
-            pass
+            logger.warning("Error procesando epic_monster_kill", exc_info=True)
 
     def get_all_objectives(self) -> Dict[str, List[Dict]]:
         """Devuelve un diccionario unificado con todos los objetivos de la partida."""

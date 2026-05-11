@@ -53,7 +53,7 @@ class WardsObserver(Observer):
             }
             self.wards.append(ward)
         except Exception:
-            pass
+            logger.warning("Error procesando ward_placed", exc_info=True)
             
     def get_wards(self) -> List[Dict[str, Any]]:
         """Devuelve la lista completa de centinelas colocados."""
