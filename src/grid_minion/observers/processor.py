@@ -63,6 +63,9 @@ class GameEventProcessor:
             grid_livestats (Optional[List[Dict]]): Eventos de la partida de GRID.
         """
 
+        # TODO: GRID_STATE será consumido por TeamsObserver u observers futuros
+        # para disponer del roster pre-partida como fuente autoritativa antes
+        # de que lleguen los eventos de Riot. En desarrollo para próximas versiones.
         if grid_state:
             context_event = {
                 "source": "GRID_STATE",

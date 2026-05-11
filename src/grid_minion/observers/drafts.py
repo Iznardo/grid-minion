@@ -106,7 +106,16 @@ class DraftObserver(Observer):
             target.pop()
 
     def _fill_skipped_bans(self, is_fp: bool):
-        """Rellena con None si un equipo se salta un baneo."""
+        """Rellena con None si un equipo se salta un baneo.
+
+        El flujo de draft competitivo de LoL es:
+            3 bans (FP) + 3 bans (SP)  →  3 picks (FP) + 3 picks (SP)
+            2 bans (FP) + 2 bans (SP)  →  2 picks (SP) + 2 picks (FP)
+
+        Los únicos puntos donde un equipo puede pickear sin haber completado
+        sus bans son: a 0 picks (saltarse bans del primer set) y a 3 picks
+        (saltarse bans del segundo set). Por eso solo hay dos ramas aquí.
+        """
         bans = self.fp_bans if is_fp else self.sp_bans
         picks = self.fp_picks if is_fp else self.sp_picks
         num_picks = len(picks)
@@ -156,7 +165,17 @@ class DraftObserver(Observer):
     def get_draft(self) -> Dict[str, Any]:
         """
         Devuelve la estructura final del draft procesado.
-        Rescata automáticamente borradores previos si coinciden exactamente con el actual.
+
+        Lógica de rescate: si el draft actual es completo y existe un borrador
+        previo en el historial con exactamente los mismos 20 campeones, se
+        devuelve ese borrador en vez del actual.
+
+        Esto cubre el caso de torneos sin tecnología de side-pick (ej. ligas
+        regionales menores) donde los equipos rehacen la partida cambiando de
+        lado: el draft es idéntico pero los equipos invierten su posición
+        BLUE/RED. Queremos el PRIMER draft (con la asignación de lados original).
+        Si los 20 campeones no coinciden exactamente, se considera un remake real
+        y se devuelve el draft más reciente.
         """
         current_draft = self._export_current_state()
         if current_draft["is_complete"] and self.draft_history:
