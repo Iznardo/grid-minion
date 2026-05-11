@@ -150,11 +150,11 @@ class TeamsObserver(Observer):
     def get_player_name(self, riot_id: int) -> str:
         """Obtiene el nombre del invocador por su ID de Riot."""
         p = self._registry.get(riot_id)
-        return getattr(p, 'name', getattr(p, 'summoner_name', 'Unknown')) if p else "Unknown"
+        return p.summoner_name if p else "Unknown"
 
     def get_player_team(self, riot_id: int) -> str:
-        """Obtiene el lado del equipo ('blue' o 'red') por el ID de Riot."""
+        """Obtiene el lado del equipo ('BLUE' o 'RED') por el ID de Riot."""
         p = self._registry.get(riot_id)
         if p:
-            return "blue" if p.team_id == 100 or p.riot_id <= 5 else "red"
+            return "BLUE" if p.team_id == 100 or p.riot_id <= 5 else "RED"
         return "UNKNOWN"
