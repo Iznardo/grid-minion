@@ -27,3 +27,4 @@ dist/
 # IDEs
 .vscode/
 .idea/
+AUDIT.md
