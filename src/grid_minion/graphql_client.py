@@ -236,8 +236,12 @@ query GetGames($after: String, $first: Int!) {
         """
         found_ids = set()
         query = """
-query GetTournaments($name: String!) {
-    tournaments(first: 50, filter: { name: { contains: $name } }) {
+query GetTournaments($name: String!, $after: String) {
+    tournaments(first: 50, after: $after, filter: { name: { contains: $name } }) {
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
         edges {
             node {
                 id
@@ -248,11 +252,17 @@ query GetTournaments($name: String!) {
 }
 """
         for name in parent_names:
-            data = self.query_central(query, variables={"name": name})
-            edges = data.get("tournaments", {}).get("edges", [])
-            for edge in edges:
-                if name in edge["node"]["name"]:
-                    found_ids.add(edge["node"]["id"])
+            cursor = None
+            while True:
+                data = self.query_central(query, variables={"name": name, "after": cursor})
+                tournaments_data = data.get("tournaments", {})
+                for edge in tournaments_data.get("edges", []):
+                    if name in edge["node"]["name"]:
+                        found_ids.add(edge["node"]["id"])
+                page_info = tournaments_data.get("pageInfo", {})
+                if not page_info.get("hasNextPage"):
+                    break
+                cursor = page_info.get("endCursor")
         return list(found_ids)
 
     def get_series_state(self, series_id: str) -> Dict[str, Any]:
