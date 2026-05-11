@@ -17,15 +17,17 @@ class GridGraphQLClient:
     URL_CENTRAL = 'https://api.grid.gg/central-data/graphql'
     URL_LIVE = 'https://api.grid.gg/live-data-feed/series-state/graphql'
 
-    def __init__(self, api_key: str, max_retries: int = 7):
+    def __init__(self, api_key: str, max_retries: int = 7, timeout: tuple = (10, 60)):
         """
         Inicializa el cliente GraphQL.
 
         Args:
             api_key (str): Tu clave de API de GRID.
             max_retries (int): Número máximo de reintentos para Rate Limits (default: 7).
+            timeout (tuple): Timeout (connect, read) en segundos (default: (10, 60)).
         """
         self.max_retries = max_retries
+        self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({
             "x-api-key": api_key,
@@ -46,7 +48,7 @@ class GridGraphQLClient:
                 # Factor de espera: 2s, 3s, 4.5s, 6.75s... (Más lento que antes)
                 default_wait = 10 * (1.5 ** (attempt - 1))
 
-                response = self.session.post(url, json=payload)
+                response = self.session.post(url, json=payload, timeout=self.timeout)
                 
                 # --- 1. GESTIÓN DE RATE LIMIT HTTP (429) ---
                 if response.status_code == 429:
@@ -160,11 +162,11 @@ class GridGraphQLClient:
         filter_parts = ""
 
         if start_time and end_time:
-            filter_parts += f'startTimeScheduled: {{ gte: "{start_time}", lte: "{end_time}" }}'
+            filter_parts += f'startTimeScheduled: {{ gte: {json.dumps(start_time)}, lte: {json.dumps(end_time)} }}'
         elif start_time:
-            filter_parts += f'startTimeScheduled: {{ gte: "{start_time}" }}'
+            filter_parts += f'startTimeScheduled: {{ gte: {json.dumps(start_time)} }}'
         elif end_time:
-            filter_parts += f'startTimeScheduled: {{ lte: "{end_time}" }}'
+            filter_parts += f'startTimeScheduled: {{ lte: {json.dumps(end_time)} }}'
 
         filter_parts += f'\n titleIds: {{ in: {json.dumps(title_id)} }}'
 
@@ -175,45 +177,43 @@ class GridGraphQLClient:
             if isinstance(team_ids, list):
                 filter_parts += f'\n teamIds: {{ in: {json.dumps(team_ids)} }}'
             else:
-                filter_parts += f'\n teamId: "{team_ids}"'
+                filter_parts += f'\n teamId: {json.dumps(str(team_ids))}'
 
         if tournament_ids:
             if isinstance(tournament_ids, list):
                 filter_parts += f'\n tournamentIds: {{ in: {json.dumps(tournament_ids)} }}'
             else:
-                filter_parts += f'\n tournamentId: "{tournament_ids}"'
+                filter_parts += f'\n tournamentId: {json.dumps(str(tournament_ids))}'
 
         def _fetch_page(cursor=""):
-            body = """
-            query GetGames {{
-                allSeries(
-                    after: "{cursor}"
-                    first: {page_games}
-                    filter: {{
-                        {filter_parts}
-                    }}
-                    orderBy: StartTimeScheduled
-                ) {{
-                    totalCount
-                    pageInfo {{
-                        hasNextPage
-                        endCursor
-                    }}
-                    edges {{
-                        node {{
-                            id
-                        }}
-                    }}
-                }}
-            }}
-            """.format(cursor=cursor, page_games=page_games, filter_parts=filter_parts)
-            
-            data = self.query_central(body)
+            query = """
+query GetGames($after: String, $first: Int!) {
+    allSeries(
+        after: $after
+        first: $first
+        filter: {
+            FILTER_PLACEHOLDER
+        }
+        orderBy: StartTimeScheduled
+    ) {
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        edges {
+            node {
+                id
+            }
+        }
+    }
+}
+""".replace("FILTER_PLACEHOLDER", filter_parts)
+
+            data = self.query_central(query, variables={"after": cursor, "first": page_games})
             series_data = data['allSeries']
-            
             nodes = series_data['edges']
             current_ids = [n['node']['id'] for n in nodes]
-            
             return current_ids, series_data['pageInfo']['hasNextPage'], series_data['pageInfo']['endCursor']
 
         has_next = True
@@ -221,7 +221,7 @@ class GridGraphQLClient:
         while has_next:
             new_ids, has_next, cursor = _fetch_page(cursor)
             all_ids.extend(new_ids)
-            
+
         return all_ids
 
     def get_tournament_ids_by_name(self, parent_names: List[str]) -> List[str]:
@@ -235,20 +235,20 @@ class GridGraphQLClient:
             List[str]: Lista de IDs de torneos que coinciden con la búsqueda.
         """
         found_ids = set()
+        query = """
+query GetTournaments($name: String!) {
+    tournaments(first: 50, filter: { name: { contains: $name } }) {
+        edges {
+            node {
+                id
+                name
+            }
+        }
+    }
+}
+"""
         for name in parent_names:
-            query = f"""
-            query {{
-              tournaments(first: 50, filter: {{ name: {{ contains: "{name}" }} }}) {{
-                edges {{
-                  node {{
-                    id
-                    name
-                  }}
-                }}
-              }}
-            }}
-            """
-            data = self.query_central(query)
+            data = self.query_central(query, variables={"name": name})
             edges = data.get("tournaments", {}).get("edges", [])
             for edge in edges:
                 if name in edge["node"]["name"]:
