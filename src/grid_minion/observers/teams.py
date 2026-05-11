@@ -1,28 +1,31 @@
 import logging
+from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 from .base import Observer
 
 logger = logging.getLogger(__name__)
 
+@dataclass
 class Participant:
     """
     Representa a un jugador en el contexto de una partida de LoL.
-    
-    Almacena tanto la informacion de Riot (summoner_name, team_side) como 
+
+    Almacena tanto la informacion de Riot (summoner_name, team_side) como
     los identificadores internos de GRID tras realizar el cruce de datos.
     """
-    def __init__(self, riot_id: int, name: str, team_id: int, champion: str):
-        self.riot_id = riot_id         # 1-10
-        self.summoner_name = name      # "T1 Faker"
-        self.team_id = team_id         # 100 (Blue) / 200 (Red)
-        self.champion_name = champion  # "Orianna"
-        self.team_side = "BLUE" if team_id == 100 else "RED"
+    riot_id: int           # 1-10
+    summoner_name: str     # "T1 Faker"
+    team_id: int           # 100 (Blue) / 200 (Red)
+    champion_name: str     # "Orianna"
+    grid_player_id: Optional[str] = None
+    grid_team_id: Optional[str] = None
+    puuid: Optional[str] = None
 
-        self.grid_player_id: Optional[str] = None
-        self.grid_team_id: Optional[str] = None
-        self.puuid: Optional[str] = None
+    @property
+    def team_side(self) -> str:
+        return "BLUE" if self.team_id == 100 else "RED"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.team_side} | {self.champion_name} ({self.summoner_name})>"
 
 class TeamsObserver(Observer):
@@ -121,9 +124,9 @@ class TeamsObserver(Observer):
                 if p_id not in self._registry:
                     player = Participant(
                         riot_id=int(p_id),
-                        name=raw_name, 
+                        summoner_name=raw_name,
                         team_id=int(team_id) if team_id else 0,
-                        champion=str(champion)
+                        champion_name=str(champion)
                     )
                     player.puuid = puuid
                     self._registry[player.riot_id] = player
