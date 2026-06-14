@@ -99,7 +99,7 @@ print(f"Picks del FP: {draft_obs.get_draft()['fp']['picks']}")
 
 La librería tiene dos capas independientes:
 
-1. **Clientes (`GridGraphQLClient`, `GridRestClient`):** descargan datos crudos de GRID y Riot. Gestionan rate limits, reintentos, timeouts y autenticación.
+1. **Clientes (`GridGraphQLClient`, `GridRestClient`):** descargan datos de GRID y Riot. Gestionan rate limits, reintentos, timeouts y autenticación.
 2. **Observers:** clases que reciben eventos uno a uno y mantienen estado parcial del partido. Cada observer es una vista especializada (equipos, draft, objetivos, etc.) y se acopla al `GameEventProcessor`.
 
 Esto permite componer únicamente lo que necesitas. Si solo quieres el draft, instancias `DraftObserver` y nada más.
@@ -164,7 +164,7 @@ data = client.query_central(query, variables={...})
 data = client.query_live(query, variables={...})
 ```
 
-Las queries internas usan **variables GraphQL parametrizadas** (no interpolación de strings), seguro ante valores con comillas o caracteres especiales.
+Las queries internas usan **variables GraphQL parametrizadas** (no interpolación de strings).
 
 ### `GridRestClient`
 
@@ -234,11 +234,11 @@ teams.get_player_name(1)            # "T1 Faker" o "Unknown"
 teams.get_player_team(1)            # "BLUE" / "RED" / "UNKNOWN"
 ```
 
-`Participant` es un `@dataclass`; `team_side` se calcula desde `team_id` (100 → BLUE, 200 → RED) sin riesgo de desincronización.
+`Participant` es un `@dataclass`; `team_side` se calcula desde `team_id` (100 → BLUE, 200 → RED).
 
 ### `DraftObserver`
 
-Reconstruye la fase de picks/bans y maneja remakes administrativos (invalidaciones, side rotation).
+Reconstruye la fase de picks/bans y maneja remakes.
 
 ```python
 from grid_minion.observers import DraftObserver
@@ -259,7 +259,7 @@ for past in draft.draft_history:
     print(past)
 ```
 
-**Lógica de rescate:** si la serie se rehace solo para invertir lados (ej. ligas sin tecnología de side-pick), `get_draft()` detecta que los 20 campeones coinciden exactamente con un borrador anterior y devuelve el original (con la asignación de lados primera). Si cambia algún pick, se considera remake real.
+**Lógica:** si la serie se rehace solo para invertir lados (ej. ligas ERL sin tecnología de side-pick), `get_draft()` detecta que los 20 campeones coinciden exactamente con un draft anterior y devuelve el original (con la asignación de lados primera). Si cambia algún pick, se considera remake real.
 
 ### `PostGameObserver`
 
@@ -297,9 +297,9 @@ p["runes"]        # {'primary_style': 8200, 'primary': [8229, 8275, 8233, 8237],
 
 **Jerarquía del ganador:**
 
-1. **`summary`:** Riot Summary expone `team.win == True`. Es la fuente autoritativa.
-2. **`game_end`:** evento `rfc461Schema: "game_end"` de Riot LiveStats con campo `winningTeam` (100 = BLUE, 200 = RED). Llega cuando la partida termina sana sin summary.
-3. **`gold_heuristic`:** fallback para scrims rotos donde nadie esperó al final. Se infiere del último `stats_update`: equipo con más oro = ganador. Marcado explícitamente como `gold_heuristic` para que sepas que es menos fiable.
+1. **`summary`:** Riot Summary expone `team.win == True`.
+2. **`game_end`:** evento `rfc461Schema: "game_end"` de Riot LiveStats con campo `winningTeam` (100 = BLUE, 200 = RED). Si la partida termina sana pero sin summary.
+3. **`gold_heuristic`:** fallback para scrims donde nadie esperó al final. Se infiere del último `stats_update`: equipo con más oro = ganador. Marcado explícitamente como `gold_heuristic`.
 
 ### `ObjectiveKilledObserver`
 
