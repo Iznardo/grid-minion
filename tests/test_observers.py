@@ -2,11 +2,27 @@ import unittest
 import json
 import os
 from src.grid_minion.observers import (
-    GameEventProcessor, TeamsObserver, DraftObserver, 
+    GameEventProcessor, TeamsObserver, DraftObserver,
     PostGameObserver, ObjectiveKilledObserver, WardsObserver
 )
+from src.grid_minion.champions import ChampionResolver, set_default_resolver
+
+# Mapeo mínimo para normalizar sin tocar Data Dragon (red).
+# Forma: {<clave Riot>: {"name": <display GRID>, "key": <id numérico>}}
+_TEST_CHAMPIONS = {
+    "Ambessa": {"name": "Ambessa", "key": 799},
+    "JarvanIV": {"name": "Jarvan IV", "key": 59},
+    "Rumble": {"name": "Rumble", "key": 68},
+}
 
 class TestObserversIntegration(unittest.TestCase):
+    def setUp(self):
+        # Resolver seedeado: los tests no deben hacer peticiones de red.
+        set_default_resolver(ChampionResolver.from_mapping(_TEST_CHAMPIONS))
+
+    def tearDown(self):
+        set_default_resolver(None)
+
     @classmethod
     def setUpClass(cls):
         # Cargar los mocks
@@ -51,11 +67,15 @@ class TestObserversIntegration(unittest.TestCase):
         self.assertEqual(player_1.grid_player_id, "24716")
         self.assertEqual(player_1.summoner_name, "GX ManoloGap")
         
-        # 2. Verificar Draft
+        # 2. Verificar Draft (picks/bans normalizados a {name: clave Riot, id})
         draft = draft_obs.get_draft()
         self.assertTrue(draft['draft_found'])
-        self.assertIn("Ambessa", draft['fp']['picks'])
-        self.assertIn("Jarvan IV", draft['fp']['bans'])
+        pick_names = [p['name'] for p in draft['fp']['picks']]
+        ban_names = [b['name'] for b in draft['fp']['bans'] if b]
+        self.assertIn("Ambessa", pick_names)
+        # "Jarvan IV" (display de GRID) se normaliza a "JarvanIV" (clave de Riot).
+        self.assertIn("JarvanIV", ban_names)
+        self.assertIn({"name": "Ambessa", "id": 799}, draft['fp']['picks'])
         
         # 3. Verificar Objetivos
         objectives = objectives_obs.get_all_objectives()
@@ -73,6 +93,60 @@ class TestObserversIntegration(unittest.TestCase):
         game_stats = stats_obs.get_game_stats(teams_obs)
         self.assertEqual(game_stats['meta']['winner'], "BLUE")
         self.assertEqual(game_stats['players'][1]['kills'], 3)
+        # champion_id resuelto vía Data Dragon (player 1 = Rumble = 68).
+        self.assertEqual(game_stats['players'][1]['champion'], "Rumble")
+        self.assertEqual(game_stats['players'][1]['champion_id'], 68)
+
+class TestDraftInvalidation(unittest.TestCase):
+    """Eventos sintéticos para el bug de draft vacío por invalidación mid-game."""
+
+    def setUp(self):
+        # Resolver vacío: los campeones desconocidos pasan tal cual (sin red).
+        set_default_resolver(ChampionResolver.from_mapping({}))
+
+    def tearDown(self):
+        set_default_resolver(None)
+
+    @staticmethod
+    def _pick(team, champ):
+        return {"type": "team-picked-character",
+                "actor": {"id": team}, "target": {"state": {"name": champ}}}
+
+    def _feed_full_draft(self, draft_obs):
+        # 5 picks por equipo => is_complete. fp = primer actor ("A").
+        champs = [f"Champ{i}" for i in range(1, 11)]
+        for i, champ in enumerate(champs):
+            team = "A" if i % 2 == 0 else "B"
+            draft_obs.notify_event(self._pick(team, champ))
+        return champs
+
+    def test_invalidacion_mid_game_no_borra_el_draft(self):
+        draft_obs = DraftObserver()
+        self._feed_full_draft(draft_obs)
+        self.assertTrue(draft_obs.is_complete)
+
+        # Empieza la partida y luego llegan 3 invalidaciones (reconexión de feed).
+        draft_obs.notify_event({"type": "series-started-game"})
+        for _ in range(3):
+            draft_obs.notify_event({"type": "grid-invalidated-series"})
+
+        draft = draft_obs.get_draft()
+        self.assertTrue(draft["is_complete"])
+        self.assertTrue(draft["draft_found"])
+        pick_names = [p["name"] for p in draft["fp"]["picks"]]
+        self.assertIn("Champ1", pick_names)
+
+    def test_invalidacion_pre_game_si_resetea(self):
+        # El comportamiento de remake pre-partida se conserva.
+        draft_obs = DraftObserver()
+        draft_obs.notify_event(self._pick("A", "Champ1"))
+        self.assertTrue(draft_obs.draft_found)
+
+        draft_obs.notify_event({"type": "grid-invalidated-series"})
+
+        self.assertFalse(draft_obs.draft_found)
+        self.assertEqual(len(draft_obs.draft_history), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Any, List, Optional
 from .base import Observer
+from ..champions import normalize_champion
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,11 @@ class DraftObserver(Observer):
         self.fp_picks: List[str] = []
         self.sp_picks: List[str] = []
         self.action_history: List[Dict[str, Any]] = []
+        # El draft queda congelado al arrancar la partida: a partir de
+        # 'series-started-game' una invalidación es una reconexión de feed de
+        # GRID, no un remake, y NO debe descartar el draft. Ver bug del draft
+        # vacío por invalidación mid-game.
+        self._game_started = False
 
     def notify_event(self, event: Dict[str, Any]):
         """Procesa eventos relacionados con picks, bans e invalidaciones."""
@@ -37,10 +43,17 @@ class DraftObserver(Observer):
 
         for e in events_list:
             ev_type = e.get("type")
+            if ev_type == "series-started-game":
+                # La partida arranca: el draft queda congelado.
+                self._game_started = True
             if ev_type in ["grid-invalidated-series", "game-aborted"]:
-                self._handle_invalidation()
+                # Solo es un remake real si llega ANTES de empezar la partida.
+                # Una invalidación mid-game es una reconexión de feed de GRID y
+                # descartaría un draft válido y completo.
+                if not self._game_started:
+                    self._handle_invalidation()
                 continue
-            if ev_type in ["team-banned-character", "team-picked-character", 
+            if ev_type in ["team-banned-character", "team-picked-character",
                            "team-!banned-character", "team-!picked-character"]:
                 self._process_draft_action(e)
 
@@ -153,17 +166,49 @@ class DraftObserver(Observer):
         """True si ambos equipos han seleccionado sus 5 campeones."""
         return len(self.fp_picks) == 5 and len(self.sp_picks) == 5
 
+    def _normalize_champion(self, name: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Convierte un nombre crudo de campeón en `{name: clave Riot, id: numérico}`.
+
+        Los baneos saltados (`None`) se conservan como `None`.
+        """
+        if name is None:
+            return None
+        riot_id, numeric_id = normalize_champion(name)
+        return {"name": riot_id, "id": numeric_id}
+
+    def _normalize_draft(self, draft_state: Dict[str, Any]) -> Dict[str, Any]:
+        """Devuelve una copia del draft con picks/bans normalizados a `{name, id}`."""
+        normalized = {
+            "draft_found": draft_state["draft_found"],
+            "is_complete": draft_state["is_complete"],
+        }
+        for side in ("fp", "sp"):
+            data = draft_state[side]
+            normalized[side] = {
+                "team_id": data["team_id"],
+                "picks": [self._normalize_champion(c) for c in data["picks"]],
+                "bans": [self._normalize_champion(c) for c in data["bans"]],
+            }
+        return normalized
+
     def get_draft(self) -> Dict[str, Any]:
         """
         Devuelve la estructura final del draft procesado.
-        Rescata automáticamente borradores previos si coinciden exactamente con el actual.
+
+        Rescata automáticamente borradores previos si coinciden exactamente con el
+        actual. Los campeones salen normalizados a la clave de Riot (`MonkeyKing`)
+        con su id numérico, vía Data Dragon, para poder cruzarlos sin ambigüedad
+        con el summary. Formato de cada pick/ban: `{"name": <clave Riot>, "id": <int>}`
+        (los baneos saltados son `None`).
         """
         current_draft = self._export_current_state()
+        chosen = current_draft
         if current_draft["is_complete"] and self.draft_history:
             curr_champs = self._get_all_champions(current_draft)
             for hist_draft in reversed(self.draft_history):
                 if hist_draft["is_complete"]:
                     hist_champs = self._get_all_champions(hist_draft)
                     if len(hist_champs) == 20 and hist_champs == curr_champs:
-                        return hist_draft
-        return current_draft
+                        chosen = hist_draft
+                        break
+        return self._normalize_draft(chosen)

@@ -20,10 +20,16 @@ dist/
 *.log
 .pytest_cache/
 
-# Variables de entorno 
+# Variables de entorno
 .env
 .env.local
 
 # IDEs
 .vscode/
 .idea/
+
+# Documentación interna (no forma parte del paquete público)
+AUDIT.md
+CLAUDE.md
+GRID_MINION_REFERENCIA.md
+docs/

@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Any, List, Optional
 from .base import Observer
+from ..champions import normalize_champion
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,17 @@ class Participant:
         self.grid_player_id: Optional[str] = None
         self.grid_team_id: Optional[str] = None
         self.puuid: Optional[str] = None
+
+    @property
+    def champion_id(self) -> Optional[int]:
+        """Id numérico de Riot del campeón (vía Data Dragon).
+
+        `champion_name` ya es la clave de Riot (`"MonkeyKing"`); aquí solo
+        resolvemos su id numérico (`62`), útil para cruzar por entero. Es lazy:
+        la primera lectura dispara la carga de Data Dragon. `None` si el campeón
+        no se reconoce.
+        """
+        return normalize_champion(self.champion_name)[1]
 
     def __repr__(self):
         return f"<{self.team_side} | {self.champion_name} ({self.summoner_name})>"

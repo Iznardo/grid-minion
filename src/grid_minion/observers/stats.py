@@ -130,6 +130,8 @@ class PostGameObserver(Observer):
                 entry["side"] = teams_observer.get_player_team(pid)
                 p_obj = teams_observer.get_player_by_id(pid)
                 entry["champion"] = p_obj.champion_name if p_obj else "?"
+                # Id numérico de Riot para cruzar por entero (paridad con SoloQ).
+                entry["champion_id"] = p_obj.champion_id if p_obj else None
             entry["kda_str"] = f"{entry['kills']}/{entry['deaths']}/{entry['assists']}"
             result["players"][pid] = entry
         return result

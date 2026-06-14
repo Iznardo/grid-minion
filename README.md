@@ -83,6 +83,43 @@ print(f"Draft: {draft_obs.get_draft()}")
 print(f"Wards totales: {len(wards_obs.get_wards())}")
 ```
 
+### 3. Normalizacion de campeones (Data Dragon)
+
+GRID y el summary de Riot nombran los campeones de forma distinta: el draft de
+GRID usa el *display name* (`"Wukong"`, `"Lee Sin"`) y el summary la *clave
+interna* de Riot (`"MonkeyKing"`, `"LeeSin"`). Para poder cruzarlos sin
+ambiguedad, la libreria normaliza ambos lados contra **Data Dragon**.
+
+- En la **primera normalizacion** se consulta la ultima version de Data Dragon
+  y se cachea en disco (`~/.cache/grid_minion/ddragon/`, configurable con la
+  variable de entorno `GRID_MINION_CACHE_DIR`). En ejecuciones posteriores solo
+  se comprueba la version; sin cambios, se usa la cache.
+- Sin red pero con cache previa → se usa la cache (con un aviso). Sin red **ni**
+  cache → se lanza `GridNetworkError`.
+
+`get_draft()` devuelve cada pick/ban ya normalizado como
+`{"name": <clave Riot>, "id": <id numerico>}` (los baneos saltados son `None`):
+
+```python
+draft = draft_obs.get_draft()
+# {
+#   "draft_found": True, "is_complete": True,
+#   "fp": {"team_id": "52457",
+#          "picks": [{"name": "MonkeyKing", "id": 62}, ...],
+#          "bans":  [{"name": "JarvanIV", "id": 59}, None, ...]},
+#   "sp": {...}
+# }
+```
+
+`get_game_stats(teams_obs)` añade `champion_id` (id numerico de Riot) por jugador,
+junto al `champion` (clave de Riot) ya existente. Tambien puedes normalizar a mano:
+
+```python
+from grid_minion import normalize_champion
+normalize_champion("Wukong")      # -> ("MonkeyKing", 62)
+normalize_champion("MonkeyKing")  # -> ("MonkeyKing", 62)
+```
+
 ## Manejo de Errores
 
 ```python

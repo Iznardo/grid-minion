@@ -91,11 +91,14 @@ def main():
                     print(f"   [{pid:02d}] {p.summoner_name:<20} | GRID ID: {grid_id:<8} | Lado: {p.team_side}")
 
             # --- Fase de Draft ---
+            # Picks normalizados a clave de Riot vía Data Dragon: {"name", "id"}.
             if draft_obs.draft_found:
                 draft = draft_obs.get_draft()
+                fp_picks = [p['name'] for p in draft['fp']['picks']]
+                sp_picks = [p['name'] for p in draft['sp']['picks']]
                 print(f"\nDraft (Completo: {draft['is_complete']}):")
-                print(f"   First Pick (Team {draft['fp']['team_id']}): {draft['fp']['picks']}")
-                print(f"   Second Pick (Team {draft['sp']['team_id']}): {draft['sp']['picks']}")
+                print(f"   First Pick (Team {draft['fp']['team_id']}): {fp_picks}")
+                print(f"   Second Pick (Team {draft['sp']['team_id']}): {sp_picks}")
 
             # --- Objetivos ---
             objs = objectives_obs.get_all_objectives()
