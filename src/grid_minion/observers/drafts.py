@@ -119,7 +119,16 @@ class DraftObserver(Observer):
             target.pop()
 
     def _fill_skipped_bans(self, is_fp: bool):
-        """Rellena con None si un equipo se salta un baneo."""
+        """Rellena con None si un equipo se salta un baneo.
+
+        El flujo de draft competitivo de LoL es:
+            3 bans (FP) + 3 bans (SP)  →  3 picks (FP) + 3 picks (SP)
+            2 bans (FP) + 2 bans (SP)  →  2 picks (SP) + 2 picks (FP)
+
+        Los únicos puntos donde un equipo puede pickear sin haber completado
+        sus bans son: a 0 picks (saltarse bans del primer set) y a 3 picks
+        (saltarse bans del segundo set). Por eso solo hay dos ramas aquí.
+        """
         bans = self.fp_bans if is_fp else self.sp_bans
         picks = self.fp_picks if is_fp else self.sp_picks
         num_picks = len(picks)
@@ -196,10 +205,13 @@ class DraftObserver(Observer):
         Devuelve la estructura final del draft procesado.
 
         Rescata automáticamente borradores previos si coinciden exactamente con el
-        actual. Los campeones salen normalizados a la clave de Riot (`MonkeyKing`)
-        con su id numérico, vía Data Dragon, para poder cruzarlos sin ambigüedad
-        con el summary. Formato de cada pick/ban: `{"name": <clave Riot>, "id": <int>}`
-        (los baneos saltados son `None`).
+        actual (caso side-swap: misma partida con lados invertidos, sin tecnología
+        de side-pick). Si los 20 campeones no coinciden exactamente, es un remake
+        real y se devuelve el draft más reciente.
+
+        Los campeones salen normalizados a la clave de Riot (`MonkeyKing`) con su
+        id numérico, vía Data Dragon. Formato de cada pick/ban:
+        `{"name": <clave Riot>, "id": <int>}` (los baneos saltados son `None`).
         """
         current_draft = self._export_current_state()
         chosen = current_draft

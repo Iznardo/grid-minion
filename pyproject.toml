@@ -31,7 +31,7 @@ test = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/tu_usuario/grid-minion"
+"Homepage" = "https://github.com/Iznardo/grid-minion"
 
 [tool.setuptools.packages.find]
 where = ["src"]

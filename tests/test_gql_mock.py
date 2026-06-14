@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-# IMPORT ACTUALIZADO:
-from src.grid_minion.graphql_client import GridGraphQLClient
+from grid_minion.graphql_client import GridGraphQLClient
 
 class TestGridGraphQLClient(unittest.TestCase):
 
@@ -15,7 +14,7 @@ class TestGridGraphQLClient(unittest.TestCase):
         self.assertEqual(headers["x-api-key"], "fake_key")
         self.assertEqual(headers["Content-Type"], "application/json")
 
-    @patch('src.grid_minion.graphql_client.requests.Session.post')
+    @patch('grid_minion.graphql_client.requests.Session.post')
     def test_query_central_success(self, mock_post):
         """Prueba una query básica exitosa"""
         mock_response = MagicMock()
@@ -27,11 +26,12 @@ class TestGridGraphQLClient(unittest.TestCase):
         
         self.assertEqual(result["series"]["id"], "123")
         mock_post.assert_called_with(
-            self.client.URL_CENTRAL, 
-            json={'query': 'query { test }'}
+            self.client.URL_CENTRAL,
+            json={'query': 'query { test }'},
+            timeout=(10, 60)
         )
 
-    @patch('src.grid_minion.graphql_client.requests.Session.post')
+    @patch('grid_minion.graphql_client.requests.Session.post')
     def test_get_series_pagination_logic(self, mock_post):
         """
         Prueba crítica: El bucle while debe unir resultados de varias páginas

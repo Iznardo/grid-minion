@@ -1,11 +1,11 @@
 import unittest
 import json
 import os
-from src.grid_minion.observers import (
+from grid_minion.observers import (
     GameEventProcessor, TeamsObserver, DraftObserver,
     PostGameObserver, ObjectiveKilledObserver, WardsObserver
 )
-from src.grid_minion.champions import ChampionResolver, set_default_resolver
+from grid_minion.champions import ChampionResolver, set_default_resolver
 
 # Mapeo mínimo para normalizar sin tocar Data Dragon (red).
 # Forma: {<clave Riot>: {"name": <display GRID>, "key": <id numérico>}}

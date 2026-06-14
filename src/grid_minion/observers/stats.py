@@ -17,6 +17,7 @@ class PostGameObserver(Observer):
         self.winner: Optional[str] = None
         self.game_version: str = "Unknown"
         self._has_summary = False
+        self._winner_source: Optional[str] = None
 
     def notify_event(self, event: Dict[str, Any]):
         """Procesa el fin de partida y los updates de estadísticas."""
@@ -31,7 +32,9 @@ class PostGameObserver(Observer):
         if not self._has_summary:
             rfc_type = event.get("rfc461Schema")
             event_type = event.get("eventType")
-            if rfc_type == "stats_update" or event_type == "stats_update":
+            if rfc_type == "game_end" or event_type == "game_end":
+                self._process_game_end(event)
+            elif rfc_type == "stats_update" or event_type == "stats_update":
                 self._process_live_stats_update(event)
             elif rfc_type == "game_info" or event_type == "game_info":
                 self._process_live_game_info(event)
@@ -47,21 +50,32 @@ class PostGameObserver(Observer):
             win_val = team.get("win")
             if win_val is True or str(win_val).lower() == "win":
                 self.winner = "BLUE" if team.get("teamId") == 100 else "RED"
+                self._winner_source = "summary"
                 break
         self._process_participants_stats(payload.get("participants", []), source="SUMMARY")
+
+    def _process_game_end(self, event: Dict[str, Any]):
+        """Extrae el ganador del evento game_end de Riot LiveStats."""
+        winning_team = event.get("winningTeam")
+        if winning_team is not None:
+            self.winner = "BLUE" if winning_team == 100 else "RED"
+            self._winner_source = "game_end"
 
     def _process_live_stats_update(self, event: Dict[str, Any]):
         """Actualiza estadísticas basándose en eventos del timeline."""
         self._process_participants_stats(event.get("participants", []), source="LIVESTATS")
-        teams_data = event.get("teams", [])
-        blue_gold = 0
-        red_gold = 0
-        for t in teams_data:
-            tid = t.get("teamID") or t.get("teamId")
-            gold = t.get("totalGold", 0)
-            if tid == 100: blue_gold = gold
-            elif tid == 200: red_gold = gold
-        self.winner = "BLUE" if blue_gold > red_gold else "RED"
+        # Solo usamos el oro como fallback si no tenemos un ganador más fiable
+        if self._winner_source != "game_end":
+            teams_data = event.get("teams", [])
+            blue_gold = 0
+            red_gold = 0
+            for t in teams_data:
+                tid = t.get("teamID") or t.get("teamId")
+                gold = t.get("totalGold", 0)
+                if tid == 100: blue_gold = gold
+                elif tid == 200: red_gold = gold
+            self.winner = "BLUE" if blue_gold > red_gold else "RED"
+            self._winner_source = "gold_heuristic"
 
     def _process_live_game_info(self, event: Dict[str, Any]):
         raw = event.get("gameVersion")
@@ -119,7 +133,8 @@ class PostGameObserver(Observer):
             "meta": {
                 "winner": self.winner,
                 "version": self.game_version,
-                "source": "SUMMARY" if self._has_summary else "LIVESTATS"
+                "source": "SUMMARY" if self._has_summary else "LIVESTATS",
+                "winner_source": self._winner_source
             },
             "players": {}
         }

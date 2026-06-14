@@ -18,6 +18,15 @@ class GameEventProcessor:
         """
         Registra un observador para recibir eventos.
 
+        IMPORTANTE: el orden de attach() importa. Los observers que dependen
+        de otro deben registrarse DESPUÉS de sus dependencias:
+
+            processor.attach(teams_obs)       # sin dependencias
+            processor.attach(draft_obs)       # sin dependencias
+            processor.attach(stats_obs)       # usa TeamsObserver en get_game_stats
+            processor.attach(objectives_obs)  # sin dependencias
+            processor.attach(wards_obs)       # recibe TeamsObserver en __init__
+
         Args:
             observer (Observer): Instancia de un observador.
         """
@@ -54,6 +63,9 @@ class GameEventProcessor:
             grid_livestats (Optional[List[Dict]]): Eventos de la partida de GRID.
         """
 
+        # TODO: GRID_STATE será consumido por TeamsObserver u observers futuros
+        # para disponer del roster pre-partida como fuente autoritativa antes
+        # de que lleguen los eventos de Riot. En desarrollo para próximas versiones.
         if grid_state:
             context_event = {
                 "source": "GRID_STATE",
@@ -81,4 +93,11 @@ class GameEventProcessor:
     def _notify_all(self, event: Dict[str, Any]):
         """Helper privado para notificar a todos los observadores."""
         for observer in self._observers:
-            observer.notify_event(event)
+            try:
+                observer.notify_event(event)
+            except Exception:
+                logger.exception(
+                    "Observer %s falló procesando evento '%s'",
+                    type(observer).__name__,
+                    event.get("rfc461Schema", event.get("type", "?"))
+                )
