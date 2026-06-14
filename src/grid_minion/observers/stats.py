@@ -95,6 +95,9 @@ class PostGameObserver(Observer):
                 gold = p.get("goldEarned", 0)
                 cs = p.get("totalMinionsKilled", 0) + p.get("neutralMinionsKilled", 0)
                 dmg = p.get("totalDamageDealtToChampions", 0)
+                # runes y final_items solo existen en el summary.
+                runes = self._collapse_runes(p.get("perks"))
+                final_items = self._final_items(p)
             else:
                 stats_list = p.get("stats", [])
                 stats_dict = {}
@@ -107,6 +110,9 @@ class PostGameObserver(Observer):
                 gold = p.get("totalGold", p.get("currentGold", 0))
                 cs = stats_dict.get("MINIONS_KILLED", 0) + stats_dict.get("NEUTRAL_MINIONS_KILLED", 0)
                 dmg = stats_dict.get("TOTAL_DAMAGE_DEALT_TO_CHAMPIONS", 0)
+                # Sin summary no hay runas ni build final fiables: no se inventan.
+                runes = None
+                final_items = None
 
             self.stats[pid] = {
                 "kills": int(kills),
@@ -115,8 +121,37 @@ class PostGameObserver(Observer):
                 "gold": int(gold),
                 "cs": int(cs),
                 "damage_dealt": int(dmg),
+                "runes": runes,
+                "final_items": final_items,
                 "source": source
             }
+
+    @staticmethod
+    def _final_items(participant: Dict[str, Any]) -> List[int]:
+        """Lista de items finales (`item0..item6`) filtrando los slots vacíos (`0`)."""
+        items = [participant.get(f"item{i}", 0) for i in range(7)]
+        return [int(it) for it in items if it]
+
+    @staticmethod
+    def _collapse_runes(perks: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Colapsa el objeto `perks` del summary a la forma fija del contrato.
+
+        `{primary_style, primary, sub_style, sub, stat_perks}`. Devuelve `None`
+        si el summary no trae runas.
+        """
+        if not perks:
+            return None
+        styles = perks.get("styles", []) or []
+        primary = next((s for s in styles if s.get("description") == "primaryStyle"), {})
+        sub = next((s for s in styles if s.get("description") == "subStyle"), {})
+        stat = perks.get("statPerks", {}) or {}
+        return {
+            "primary_style": primary.get("style"),
+            "primary": [sel.get("perk") for sel in primary.get("selections", [])],
+            "sub_style": sub.get("style"),
+            "sub": [sel.get("perk") for sel in sub.get("selections", [])],
+            "stat_perks": [stat.get("offense"), stat.get("flex"), stat.get("defense")],
+        }
 
     def get_game_stats(self, teams_observer: Optional[TeamsObserver] = None) -> Dict[str, Any]:
         """

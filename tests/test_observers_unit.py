@@ -1,7 +1,7 @@
 import unittest
 from grid_minion.observers import (
     GameEventProcessor, TeamsObserver, DraftObserver,
-    PostGameObserver, ObjectiveKilledObserver, WardsObserver
+    PostGameObserver, ObjectiveKilledObserver, WardsObserver, BuildObserver
 )
 from grid_minion.champions import ChampionResolver, set_default_resolver
 
@@ -189,6 +189,126 @@ class TestPostGameObserver(unittest.TestCase):
         obs = PostGameObserver()
         obs.notify_event(self._summary_event(100))
         self.assertEqual(obs.get_game_stats()["meta"]["version"], "14.1")
+
+    def test_runes_and_final_items_from_summary(self):
+        obs = PostGameObserver()
+        obs.notify_event({
+            "source": "RIOT_SUMMARY",
+            "payload": {
+                "teams": [{"teamId": 100, "win": True}],
+                "participants": [{
+                    "participantId": 1, "teamId": 100,
+                    "item0": 3047, "item1": 3157, "item2": 0, "item3": 6653,
+                    "item4": 4645, "item5": 0, "item6": 3363,
+                    "perks": {
+                        "statPerks": {"offense": 5008, "flex": 5008, "defense": 5011},
+                        "styles": [
+                            {"description": "primaryStyle", "style": 8200,
+                             "selections": [{"perk": 8229}, {"perk": 8275}]},
+                            {"description": "subStyle", "style": 8400,
+                             "selections": [{"perk": 8473}, {"perk": 8242}]},
+                        ],
+                    },
+                }],
+            },
+        })
+        player = obs.get_game_stats()["players"][1]
+        # final_items: sin los ceros, en orden
+        self.assertEqual(player["final_items"], [3047, 3157, 6653, 4645, 3363])
+        # runes colapsadas
+        self.assertEqual(player["runes"], {
+            "primary_style": 8200,
+            "primary": [8229, 8275],
+            "sub_style": 8400,
+            "sub": [8473, 8242],
+            "stat_perks": [5008, 5008, 5011],
+        })
+
+    def test_no_runes_without_summary(self):
+        """Sin summary, runes y final_items son None (no se inventan)."""
+        obs = PostGameObserver()
+        obs.notify_event({"rfc461Schema": "stats_update",
+                          "participants": [{"participantId": 1, "stats": []}],
+                          "teams": []})
+        player = obs.get_game_stats()["players"][1]
+        self.assertIsNone(player["runes"])
+        self.assertIsNone(player["final_items"])
+
+
+# ---------------------------------------------------------------------------
+# BuildObserver
+# ---------------------------------------------------------------------------
+
+class TestBuildObserver(unittest.TestCase):
+
+    def _buy(self, pid, item, ts_ms=0, seq=0):
+        return {"rfc461Schema": "item_purchased", "participantID": pid,
+                "itemID": item, "gameTime": ts_ms}
+
+    def _sell(self, pid, item, ts_ms=0):
+        return {"rfc461Schema": "item_sold", "participantID": pid,
+                "itemID": item, "gameTime": ts_ms}
+
+    def _undo(self, pid, item, gold_gain):
+        return {"rfc461Schema": "item_undo", "participantID": pid,
+                "itemID": item, "goldGain": gold_gain}
+
+    def _skill(self, pid, slot, evolved=False):
+        # Los eventos de skill usan 'participant', no 'participantID'.
+        return {"rfc461Schema": "skill_level_up", "participant": pid,
+                "skillSlot": slot, "evolved": evolved}
+
+    def test_build_path_buy_sell_order(self):
+        obs = BuildObserver()
+        obs.notify_event(self._buy(1, 1054, ts_ms=2000))
+        obs.notify_event(self._buy(1, 3044, ts_ms=817000))
+        obs.notify_event(self._sell(1, 1054, ts_ms=1547000))
+        bp = obs.get_builds()[1]["build_path"]
+        self.assertEqual(bp, [
+            {"ts_s": 2, "action": "BUY", "item_id": 1054},
+            {"ts_s": 817, "action": "BUY", "item_id": 3044},
+            {"ts_s": 1547, "action": "SELL", "item_id": 1054},
+        ])
+
+    def test_undo_removes_last_buy(self):
+        obs = BuildObserver()
+        obs.notify_event(self._buy(1, 1054))
+        obs.notify_event(self._buy(1, 3044))
+        obs.notify_event(self._undo(1, 3044, gold_gain=850))  # deshace la compra
+        items = [(e["action"], e["item_id"]) for e in obs.get_builds()[1]["build_path"]]
+        self.assertEqual(items, [("BUY", 1054)])
+
+    def test_undo_removes_last_sell(self):
+        obs = BuildObserver()
+        obs.notify_event(self._buy(1, 1054))
+        obs.notify_event(self._sell(1, 1054))
+        obs.notify_event(self._undo(1, 1054, gold_gain=-300))  # deshace la venta
+        items = [(e["action"], e["item_id"]) for e in obs.get_builds()[1]["build_path"]]
+        self.assertEqual(items, [("BUY", 1054)])
+
+    def test_skill_order_excludes_evolved(self):
+        obs = BuildObserver()
+        obs.notify_event(self._skill(1, 1))            # Q
+        obs.notify_event(self._skill(1, 3))            # E
+        obs.notify_event(self._skill(1, 1, evolved=True))  # evolución, se excluye
+        obs.notify_event(self._skill(1, 4))            # R
+        self.assertEqual(obs.get_builds()[1]["skill_order"], "QER")
+
+    def test_mixed_participant_casing(self):
+        """Items usan participantID y skills participant: mismo jugador."""
+        obs = BuildObserver()
+        obs.notify_event(self._buy(7, 1001))
+        obs.notify_event(self._skill(7, 2))
+        builds = obs.get_builds()
+        self.assertIn(7, builds)
+        self.assertEqual(builds[7]["build_path"][0]["item_id"], 1001)
+        self.assertEqual(builds[7]["skill_order"], "W")
+
+    def test_reset(self):
+        obs = BuildObserver()
+        obs.notify_event(self._buy(1, 1054))
+        obs.reset()
+        self.assertEqual(obs.get_builds(), {})
 
 
 # ---------------------------------------------------------------------------

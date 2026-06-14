@@ -17,7 +17,23 @@
             "goldEarned": 12447,
             "totalDamageDealtToChampions": 15000,
             "totalMinionsKilled": 200,
-            "neutralMinionsKilled": 60
+            "neutralMinionsKilled": 60,
+            "item0": 3047,
+            "item1": 3157,
+            "item2": 0,
+            "item3": 6653,
+            "item4": 4645,
+            "item5": 0,
+            "item6": 3363,
+            "perks": {
+                "statPerks": {"offense": 5008, "flex": 5008, "defense": 5011},
+                "styles": [
+                    {"description": "primaryStyle", "style": 8200,
+                     "selections": [{"perk": 8229}, {"perk": 8275}, {"perk": 8233}, {"perk": 8237}]},
+                    {"description": "subStyle", "style": 8400,
+                     "selections": [{"perk": 8473}, {"perk": 8242}]}
+                ]
+            }
         },
         {
             "participantId": 6,

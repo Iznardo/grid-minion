@@ -3,7 +3,7 @@ import json
 import os
 from grid_minion.observers import (
     GameEventProcessor, TeamsObserver, DraftObserver,
-    PostGameObserver, ObjectiveKilledObserver, WardsObserver
+    PostGameObserver, ObjectiveKilledObserver, WardsObserver, BuildObserver
 )
 from grid_minion.champions import ChampionResolver, set_default_resolver
 
@@ -47,12 +47,14 @@ class TestObserversIntegration(unittest.TestCase):
         stats_obs = PostGameObserver()
         objectives_obs = ObjectiveKilledObserver()
         wards_obs = WardsObserver(teams_observer=teams_obs)
-        
+        build_obs = BuildObserver()
+
         processor.attach(teams_obs)
         processor.attach(draft_obs)
         processor.attach(stats_obs)
         processor.attach(objectives_obs)
         processor.attach(wards_obs)
+        processor.attach(build_obs)
         
         # Procesar bundle
         processor.process_bundle(
@@ -96,6 +98,26 @@ class TestObserversIntegration(unittest.TestCase):
         # champion_id resuelto vía Data Dragon (player 1 = Rumble = 68).
         self.assertEqual(game_stats['players'][1]['champion'], "Rumble")
         self.assertEqual(game_stats['players'][1]['champion_id'], 68)
+        # runes colapsadas y final_items (sin ceros) desde el summary.
+        self.assertEqual(game_stats['players'][1]['final_items'],
+                         [3047, 3157, 6653, 4645, 3363])
+        self.assertEqual(game_stats['players'][1]['runes'], {
+            "primary_style": 8200, "primary": [8229, 8275, 8233, 8237],
+            "sub_style": 8400, "sub": [8473, 8242],
+            "stat_perks": [5008, 5008, 5011],
+        })
+
+        # 6. Verificar Builds (timeline)
+        builds = build_obs.get_builds()
+        # skill_order: slots 1,2,3,1 = QWEQ; la subida evolved (slot 4) se excluye.
+        self.assertEqual(builds[1]['skill_order'], "QWEQ")
+        # build_path: la compra de 3157 se cancela con su item_undo.
+        self.assertEqual(builds[1]['build_path'], [
+            {"ts_s": 3, "action": "BUY", "item_id": 1056},
+            {"ts_s": 145, "action": "BUY", "item_id": 1052},
+            {"ts_s": 200, "action": "SELL", "item_id": 1056},
+            {"ts_s": 430, "action": "BUY", "item_id": 3047},
+        ])
 
 class TestDraftInvalidation(unittest.TestCase):
     """Eventos sintéticos para el bug de draft vacío por invalidación mid-game."""

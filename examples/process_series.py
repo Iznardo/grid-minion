@@ -5,12 +5,13 @@ from dotenv import load_dotenv
 # Importaciones de la libreria
 from grid_minion import GridRestClient, split_grid_series, GridError
 from grid_minion.observers import (
-    GameEventProcessor, 
-    TeamsObserver, 
-    DraftObserver, 
-    PostGameObserver, 
+    GameEventProcessor,
+    TeamsObserver,
+    DraftObserver,
+    PostGameObserver,
     ObjectiveKilledObserver,
-    WardsObserver
+    WardsObserver,
+    BuildObserver
 )
 
 # Configuracion de logging para ver que ocurre internamente (opcional)
@@ -56,16 +57,18 @@ def main():
             processor = GameEventProcessor()
             
             teams_obs = TeamsObserver()
-            draft_obs = DraftObserver()      
-            stats_obs = PostGameObserver()   
+            draft_obs = DraftObserver()
+            stats_obs = PostGameObserver()
             objectives_obs = ObjectiveKilledObserver()
             wards_obs = WardsObserver(teams_observer=teams_obs)
-            
+            build_obs = BuildObserver()
+
             processor.attach(teams_obs)
             processor.attach(draft_obs)
             processor.attach(stats_obs)
             processor.attach(objectives_obs)
             processor.attach(wards_obs)
+            processor.attach(build_obs)
 
             # B. Descargar datos adicionales de Riot
             print(f"Obteniendo datos de Riot...")
@@ -112,6 +115,17 @@ def main():
             meta = final_stats['meta']
             print(f"\nResultado:")
             print(f"   Ganador: {meta['winner']} | Version: {meta['version']}")
+
+            # --- Builds por jugador (runas, items, skill order, build path) ---
+            builds = build_obs.get_builds()
+            print(f"\nBuilds (jugador 1):")
+            p1 = final_stats['players'].get(1, {})
+            b1 = builds.get(1, {})
+            print(f"   Campeon:     {p1.get('champion')} (id {p1.get('champion_id')})")
+            print(f"   Final items: {p1.get('final_items')}")
+            print(f"   Runas:       {p1.get('runes')}")
+            print(f"   Skill order: {b1.get('skill_order')}")
+            print(f"   Build path:  {len(b1.get('build_path', []))} compras/ventas")
 
     except GridError as e:
         print(f"Error de la libreria: {e}")

@@ -5,6 +5,7 @@ from .drafts import DraftObserver
 from .stats import PostGameObserver
 from .objectives import ObjectiveKilledObserver
 from .vision import WardsObserver
+from .builds import BuildObserver
 
 __all__ = [
     "Observer",
@@ -14,5 +15,6 @@ __all__ = [
     "DraftObserver",
     "PostGameObserver",
     "ObjectiveKilledObserver",
-    "WardsObserver"
+    "WardsObserver",
+    "BuildObserver"
 ]

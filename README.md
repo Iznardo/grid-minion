@@ -21,6 +21,7 @@ Cliente de Python no oficial para las APIs de [GRID.gg](https://grid.gg/), enfoc
   - [PostGameObserver](#postgameobserver)
   - [ObjectiveKilledObserver](#objectivekilledobserver)
   - [WardsObserver](#wardsobserver)
+  - [BuildObserver](#buildobserver)
 - [GameEventProcessor](#gameeventprocessor)
 - [Utilidades](#utilidades)
 - [Manejo de errores](#manejo-de-errores)
@@ -280,7 +281,18 @@ report["meta"]["version"]        # "14.1"
 for pid, p in report["players"].items():
     print(f"{p['name']} ({p['champion']}): {p['kda_str']}")
     # p = {'kills', 'deaths', 'assists', 'gold', 'cs', 'damage_dealt',
-    #      'kda_str', 'name', 'champion', 'side', 'source'}
+    #      'kda_str', 'name', 'champion', 'champion_id', 'side', 'source',
+    #      'runes', 'final_items'}
+```
+
+**`runes` y `final_items`** salen del Riot Summary (no hay fuente fiable sin él;
+sin summary son `None`):
+
+```python
+p["final_items"]  # [3047, 3157, 6653, ...]  ← item0..item6 sin los ceros
+p["runes"]        # {'primary_style': 8200, 'primary': [8229, 8275, 8233, 8237],
+                  #  'sub_style': 8400, 'sub': [8473, 8242],
+                  #  'stat_perks': [5008, 5008, 5011]}
 ```
 
 **Jerarquía del ganador:**
@@ -323,6 +335,33 @@ for w in wards.get_wards():
     print(f"[{w['time']:.0f}s] {w['placer']} ({w['team']}) → {w['type']}")
     # w = {'time', 'placer', 'team', 'type', 'position': {'x', 'y'}}
 ```
+
+### `BuildObserver`
+
+Reconstruye, por jugador, la **build path** (compras/ventas en orden) y el
+**skill order**, a partir de la timeline de Riot (`riot_livestats`). Sin
+dependencias; se cruza con el resto por `participantId` (1-10).
+
+```python
+from grid_minion.observers import BuildObserver
+
+builds = BuildObserver()
+# ... tras process_bundle (necesita riot_livestats) ...
+
+for pid, b in builds.get_builds().items():
+    print(pid, b["skill_order"])              # "EQWQQRQEQEREEWWRWW"
+    # b = {
+    #   "skill_order": "QWEQ...",              # solo subidas normales (sin evoluciones)
+    #   "build_path": [
+    #       {"ts_s": 3,   "action": "BUY",  "item_id": 1056},
+    #       {"ts_s": 430, "action": "BUY",  "item_id": 3047},
+    #       {"ts_s": 803, "action": "SELL", "item_id": 2003},
+    #   ],
+    # }
+```
+
+`build_path` está en orden cronológico, con los `item_undo` ya resueltos. El
+`skill_order` mapea `1→Q, 2→W, 3→E, 4→R` y excluye evoluciones (Kha'Zix, Viktor).
 
 ---
 
