@@ -1,6 +1,7 @@
 import requests
 import time
 import json
+import re
 import logging
 from zipfile import ZipFile
 from io import BytesIO
@@ -117,6 +118,53 @@ class GridRestClient:
             return response.json().get("files", [])
         return []
 
+    def get_riot_livestats_manifest(self, series_id: str) -> List[Dict[str, Any]]:
+        """
+        Devuelve los metadatos de todos los archivos Riot LiveStats listados por GRID.
+
+        En ligas como LPL, una serie de 3-5 mapas puede listar muchos archivos
+        `events-riot-game-N` que no corresponden 1:1 con el número de partida real.
+        Este método no descarga nada: solo expone el manifest oficial para que el
+        consumidor pueda decidir si agrupa fragments.
+        """
+        files = self.get_available_files(series_id)
+        manifest: List[Dict[str, Any]] = []
+        for file_info in files:
+            file_id = str(file_info.get("id", ""))
+            match = re.match(r"events-riot-game-(\d+)$", file_id)
+            if not match:
+                continue
+            item = dict(file_info)
+            item["game_number"] = int(match.group(1))
+            manifest.append(item)
+        return sorted(manifest, key=lambda item: item["game_number"])
+
+    def get_riot_livestats_fragments(
+        self,
+        series_id: str,
+        game_numbers: Optional[List[int]] = None,
+        parse_json: bool = True
+    ) -> List[Dict[str, Any]]:
+        """
+        Descarga fragments Riot LiveStats usando exclusivamente el manifest de GRID.
+
+        No hace probing incremental de `game_number`: solo descarga archivos que
+        `get_available_files()` declara como listos. La salida conserva la metadata
+        para que capas superiores puedan agrupar con diagnóstico.
+        """
+        wanted = set(game_numbers) if game_numbers is not None else None
+        fragments: List[Dict[str, Any]] = []
+        for item in self.get_riot_livestats_manifest(series_id):
+            game_number = item["game_number"]
+            if wanted is not None and game_number not in wanted:
+                continue
+            fragments.append({
+                "game_number": game_number,
+                "file": item,
+                "events": self.get_riot_livestats(series_id, game_number, parse_json=parse_json)
+            })
+        return fragments
+
     def get_riot_summary(self, series_id: str, game_number: int = 1) -> Optional[Dict[str, Any]]:
         """
         Descarga el resumen del juego (End State) proporcionado por Riot.
@@ -137,6 +185,32 @@ class GridRestClient:
             except json.JSONDecodeError as e:
                 raise GridDataError(f"Error parseando JSON de Riot Summary: {e}")
         return None
+
+    def get_tencent_details(
+        self,
+        series_id: str,
+        game_number: int = 1,
+        parse_json: bool = True
+    ) -> Union[Dict[str, Any], str, None]:
+        """
+        Descarga el end-state de Tencent para partidas LPL.
+
+        GRID no lo documenta junto al Riot Summary, pero aparece en el manifest
+        (`get_available_files`) como `state-tencent-game-N`.
+        """
+        endpoint = f"/file-download/end-state/tencent/series/{series_id}/games/{game_number}"
+        response = self._request("GET", endpoint)
+
+        if not response:
+            return None
+
+        if not parse_json:
+            return response.text
+
+        try:
+            return response.json()
+        except json.JSONDecodeError as e:
+            raise GridDataError(f"Error parseando JSON de Tencent Details: {e}")
 
     def get_riot_livestats(self, series_id: str, game_number: int = 1, parse_json: bool = True) -> Union[List[Dict], str, None]:
         """

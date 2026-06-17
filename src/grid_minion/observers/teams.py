@@ -21,6 +21,8 @@ class Participant:
     grid_player_id: Optional[str] = None
     grid_team_id: Optional[str] = None
     puuid: Optional[str] = None
+    tencent_player_id: Optional[str] = None
+    tencent_team_id: Optional[str] = None
 
     @property
     def team_side(self) -> str:
@@ -73,11 +75,22 @@ class TeamsObserver(Observer):
             self._process_participants(payload.get("participants", []))
             return
 
-        # --- CASO C: Fuente RIOT LIVESTATS (Timeline) ---
+        # --- CASO C: Fuentes normalizadas LPL (Tencent / GRID GameState) ---
+        if event.get("source") in ["TENCENT_DETAILS", "GRID_GAME_STATE"]:
+            payload = event.get("payload", {})
+            self._process_participants(payload.get("participants", []))
+            return
+
+        # --- CASO D: Fuente RIOT LIVESTATS (Timeline) ---
+        schema = event.get("rfc461Schema")
+        if schema == "game_info" and self._should_process_game_info():
+            self._process_participants(event.get("participants", []))
+
+    def _should_process_game_info(self) -> bool:
+        """Procesa `game_info` si falta contexto o si puede aportar PUUIDs."""
         if not self._context_ready:
-            schema = event.get("rfc461Schema")
-            if schema == "game_info":
-                self._process_participants(event.get("participants", []))
+            return True
+        return any(not participant.puuid for participant in self._registry.values())
 
     def _extract_puuids_from_grid(self, grid_event: Dict[str, Any]):
         """Extrae el mapeo PUUID -> GRID ID desde eventos de GRID."""
@@ -124,23 +137,32 @@ class TeamsObserver(Observer):
 
         for p in participants_list:
             p_id = p.get("participantId")
+            if p_id is None:
+                p_id = p.get("participantID")
             raw_name = p.get("riotIdGameName") or p.get("summonerName") or "Unknown"
             team_id = p.get("teamId") or p.get("teamID")
             champion = p.get("championName")
             puuid = p.get("puuid", "").lower()
             
-            if not puuid:
+            if not puuid and p.get("source") not in ["TENCENT_DETAILS", "GRID_GAME_STATE"]:
                 logger.warning(f"Riot no ha enviado el PUUID para {raw_name}")
 
             if p_id is not None and raw_name != "Unknown":
-                if p_id not in self._registry:
+                pid_key = int(p_id)
+                if pid_key not in self._registry:
                     player = Participant(
-                        riot_id=int(p_id),
+                        riot_id=pid_key,
                         summoner_name=raw_name,
                         team_id=int(team_id) if team_id else 0,
                         champion_name=str(champion)
                     )
                     player.puuid = puuid
+                    player.grid_player_id = p.get("grid_player_id")
+                    player.grid_team_id = p.get("grid_team_id")
+                    if p.get("tencent_player_id") is not None:
+                        player.tencent_player_id = str(p.get("tencent_player_id"))
+                    if p.get("tencent_team_id") is not None:
+                        player.tencent_team_id = str(p.get("tencent_team_id"))
                     self._registry[player.riot_id] = player
                     
                     if player.team_id == 100 or (not team_id and 1 <= player.riot_id <= 5):
@@ -148,7 +170,20 @@ class TeamsObserver(Observer):
                     else:
                         self.teams[1].append(raw_name)
                 else:
-                    player = self._registry[p_id]
+                    player = self._registry[pid_key]
+                    player.summoner_name = raw_name
+                    if team_id:
+                        player.team_id = int(team_id)
+                    if champion:
+                        player.champion_name = str(champion)
+                    if puuid:
+                        player.puuid = puuid
+                    player.grid_player_id = p.get("grid_player_id", player.grid_player_id)
+                    player.grid_team_id = p.get("grid_team_id", player.grid_team_id)
+                    if p.get("tencent_player_id") is not None:
+                        player.tencent_player_id = str(p.get("tencent_player_id"))
+                    if p.get("tencent_team_id") is not None:
+                        player.tencent_team_id = str(p.get("tencent_team_id"))
 
                 grid_info = self._puuid_map.get(puuid)
                 if grid_info:

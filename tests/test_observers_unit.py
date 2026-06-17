@@ -236,6 +236,177 @@ class TestPostGameObserver(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# Fuentes LPL (Tencent / GRID GameState)
+# ---------------------------------------------------------------------------
+
+def _lpl_player(name, role, champ, champ_id, kills=1, deaths=2, assists=3):
+    return {
+        "playerId": champ_id * 10,
+        "playerName": name,
+        "role": role,
+        "playerLocation": role,
+        "globalPickOrder": 1,
+        "globalPickOrderDefault": 1,
+        "heroId": champ_id,
+        "heroNameEn": champ,
+        "items": [{"itemId": 1055}, {"itemId": 3031}],
+        "trinketItem": {"itemId": 3363},
+        "perkStyle": {"styleId": 8000},
+        "perkSubStyle": {"styleId": 8300},
+        "perkRunes": [
+            {"runeId": 8008}, {"runeId": 9111}, {"runeId": 9103},
+            {"runeId": 8017}, {"runeId": 8345}, {"runeId": 8347},
+            {"runeId": 5005}, {"runeId": 5008}, {"runeId": 5011},
+        ],
+        "battleDetail": {"kills": kills, "death": deaths, "assist": assists},
+        "damageDetail": {"heroDamage": 12345.6},
+        "otherDetail": {"golds": 12000, "creepsKilled": 250},
+        "visionDetail": {"visionScore": 33},
+    }
+
+
+def _tencent_details():
+    roles = ["TOP", "JUN", "MID", "BOT", "SUP"]
+    blue_players = [
+        _lpl_player(f"BLUE{i}", role, f"BlueChamp{i}", 10 + i)
+        for i, role in enumerate(roles, start=1)
+    ]
+    red_players = [
+        _lpl_player(f"RED{i}", role, f"RedChamp{i}", 20 + i, kills=2)
+        for i, role in enumerate(roles, start=1)
+    ]
+    return {
+        "blueTeam": 1,
+        "matchWin": 2,
+        "matchStatus": 2,
+        "gameTime": 1800,
+        "bpFirstTeam": 1,
+        "teamInfos": [
+            {"teamId": 1, "teamSide": "Blue", "kills": 5, "golds": 50000,
+             "banHeroList": [101, 102, 103, 104, 105],
+             "globalBanOrderDefault": [1, 3, 5, 8, 10],
+             "playerInfos": blue_players},
+            {"teamId": 2, "teamSide": "Red", "kills": 10, "golds": 60000,
+             "banHeroList": [201, 202, 203, 204, 205],
+             "globalBanOrderDefault": [2, 4, 6, 7, 9],
+             "playerInfos": red_players},
+        ],
+    }
+
+
+class TestLPLSources(unittest.TestCase):
+
+    def setUp(self):
+        set_default_resolver(ChampionResolver.from_mapping({}))
+
+    def tearDown(self):
+        set_default_resolver(None)
+
+    def test_tencent_details_populates_teams_and_stats(self):
+        processor = GameEventProcessor()
+        teams = TeamsObserver()
+        stats = PostGameObserver()
+        processor.attach(teams)
+        processor.attach(stats)
+
+        processor.process_bundle(tencent_details=_tencent_details())
+
+        p1 = teams.get_player_by_id(1)
+        p6 = teams.get_player_by_id(6)
+        self.assertEqual(p1.summoner_name, "BLUE1")
+        self.assertEqual(p1.team_side, "BLUE")
+        self.assertEqual(p6.summoner_name, "RED1")
+        self.assertEqual(p6.team_side, "RED")
+
+        report = stats.get_game_stats(teams)
+        self.assertEqual(report["meta"]["winner"], "RED")
+        self.assertEqual(report["meta"]["source"], "TENCENT_DETAILS")
+        self.assertEqual(report["meta"]["winner_source"], "tencent_details")
+        self.assertEqual(report["players"][1]["final_items"], [1055, 3031, 3363])
+        self.assertEqual(report["players"][1]["runes"]["primary"], [8008, 9111, 9103, 8017])
+
+    def test_riot_game_info_enriches_puuid_after_tencent(self):
+        processor = GameEventProcessor()
+        teams = TeamsObserver()
+        processor.attach(teams)
+        processor.process_bundle(
+            tencent_details=_tencent_details(),
+            riot_livestats=[{
+                "rfc461Schema": "game_info",
+                "participants": [
+                    {"participantID": 1, "summonerName": "BLUE1", "teamID": 100,
+                     "championName": "BlueChamp1", "puuid": "puuid-blue-1"},
+                    {"participantID": 6, "summonerName": "RED1", "teamID": 200,
+                     "championName": "RedChamp1", "puuid": "puuid-red-1"},
+                ],
+            }],
+        )
+
+        self.assertEqual(teams.get_player_by_id(1).puuid, "puuid-blue-1")
+        self.assertEqual(teams.get_player_by_id(6).puuid, "puuid-red-1")
+
+    def test_riot_summary_overrides_tencent_details(self):
+        processor = GameEventProcessor()
+        stats = PostGameObserver()
+        processor.attach(stats)
+        processor.process_bundle(
+            tencent_details=_tencent_details(),
+            riot_summary={
+                "teams": [{"teamId": 100, "win": True}],
+                "participants": [],
+                "gameVersion": "16.10.1",
+            },
+        )
+        meta = stats.get_game_stats()["meta"]
+        self.assertEqual(meta["winner"], "BLUE")
+        self.assertEqual(meta["source"], "SUMMARY")
+        self.assertEqual(meta["winner_source"], "summary")
+
+    def test_grid_game_state_draft_is_fallback_when_grid_events_incomplete(self):
+        processor = GameEventProcessor()
+        draft = DraftObserver()
+        processor.attach(draft)
+        actions = []
+        sequence = 1
+        for action_type, team_id, champ in [
+            ("ban", "A", "Aatrox"), ("ban", "B", "Ahri"),
+            ("ban", "A", "Akali"), ("ban", "B", "Alistar"),
+            ("ban", "A", "Amumu"), ("ban", "B", "Anivia"),
+            ("pick", "A", "Annie"), ("pick", "B", "Ashe"),
+            ("pick", "B", "Azir"), ("pick", "A", "Bard"),
+            ("pick", "A", "Blitzcrank"), ("pick", "B", "Brand"),
+            ("ban", "B", "Braum"), ("ban", "A", "Caitlyn"),
+            ("ban", "B", "Camille"), ("ban", "A", "Cassiopeia"),
+            ("pick", "B", "ChoGath"), ("pick", "A", "Corki"),
+            ("pick", "A", "Darius"), ("pick", "B", "Diana"),
+        ]:
+            actions.append({
+                "sequenceNumber": str(sequence),
+                "type": action_type,
+                "drafter": {"id": team_id},
+                "draftable": {"name": champ},
+            })
+            sequence += 1
+
+        processor.process_bundle(
+            grid_game_state={"draftActions": actions},
+            grid_livestats=[{"events": [
+                {"type": "team-banned-character", "actor": {"id": "A"},
+                 "target": {"state": {"name": "Aatrox"}}},
+                {"type": "team-picked-character", "actor": {"id": "A"},
+                 "target": {"state": {"name": "Annie"}}},
+            ]}],
+        )
+
+        result = draft.get_draft()
+        status = draft.get_draft_status()
+        self.assertTrue(result["is_complete"])
+        self.assertEqual(len(result["fp"]["picks"]), 5)
+        self.assertTrue(status["uses_fallback"])
+        self.assertEqual(status["fallback_source"], "grid_game_state")
+
+
+# ---------------------------------------------------------------------------
 # BuildObserver
 # ---------------------------------------------------------------------------
 

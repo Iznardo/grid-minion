@@ -1,6 +1,7 @@
 import logging
 from typing import List, Dict, Any, Optional
 from .base import Observer
+from ..sources import normalize_tencent_details, normalize_grid_game_state
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,10 @@ class GameEventProcessor:
                        grid_state: Optional[Dict] = None, 
                        riot_summary: Optional[Dict] = None, 
                        riot_livestats: Optional[List[Dict]] = None,
-                       grid_livestats: Optional[List[Dict]] = None):
+                       grid_livestats: Optional[List[Dict]] = None,
+                       tencent_details: Optional[Dict] = None,
+                       grid_game_state: Optional[Dict] = None,
+                       lpl_diagnostics: Optional[Dict] = None):
         """
         Procesa múltiples fuentes de datos en el orden lógico correcto.
 
@@ -61,6 +65,9 @@ class GameEventProcessor:
             riot_summary (Optional[Dict]): Resumen final de Riot.
             riot_livestats (Optional[List[Dict]]): Eventos del timeline de Riot.
             grid_livestats (Optional[List[Dict]]): Eventos de la partida de GRID.
+            tencent_details (Optional[Dict]): End-state de Tencent para LPL.
+            grid_game_state (Optional[Dict]): GameState concreto de GRID para una partida.
+            lpl_diagnostics (Optional[Dict]): Diagnósticos de agrupación/calidad LPL.
         """
 
         # TODO: GRID_STATE será consumido por TeamsObserver u observers futuros
@@ -71,6 +78,22 @@ class GameEventProcessor:
                 "source": "GRID_STATE",
                 "rfc461Schema": "grid_state",
                 "payload": grid_state
+            }
+            self._notify_all(context_event)
+
+        if grid_game_state:
+            context_event = {
+                "source": "GRID_GAME_STATE",
+                "rfc461Schema": "grid_game_state",
+                "payload": normalize_grid_game_state(grid_game_state)
+            }
+            self._notify_all(context_event)
+
+        if tencent_details:
+            context_event = {
+                "source": "TENCENT_DETAILS",
+                "rfc461Schema": "tencent_details",
+                "payload": normalize_tencent_details(tencent_details)
             }
             self._notify_all(context_event)
 
@@ -89,6 +112,14 @@ class GameEventProcessor:
         if riot_livestats:
             for event in riot_livestats:
                 self._notify_all(event)
+
+        if lpl_diagnostics:
+            context_event = {
+                "source": "LPL_DIAGNOSTICS",
+                "rfc461Schema": "lpl_diagnostics",
+                "payload": lpl_diagnostics
+            }
+            self._notify_all(context_event)
 
     def _notify_all(self, event: Dict[str, Any]):
         """Helper privado para notificar a todos los observadores."""

@@ -106,19 +106,29 @@ Esto permite componer únicamente lo que necesitas. Si solo quieres el draft, in
 
 ### Fuentes de datos
 
-GRID expone tres fuentes complementarias para una serie de LoL:
+GRID expone varias fuentes complementarias para una serie de LoL:
 
 | Fuente | Qué contiene | Cuándo llega |
 |--------|--------------|--------------|
 | **GRID livestats** | Picks/bans del draft, IDs internos de GRID, eventos administrativos (invalidaciones, side rotation) | Durante y tras la partida |
 | **Riot summary** | End-state oficial: ganador, KDA final, oro, daño, versión del juego | Tras el final de la partida |
 | **Riot livestats** | Timeline detallado: kills, wards, objetivos, posiciones | Durante la partida (JSONL) |
+| **GRID end-state** | Estado final de serie: games, rosters, draftActions, sides, versión | Tras la serie |
+| **Tencent details** | End-state LPL: ganador, stats finales, runas, items, picks/bans agregados | Tras la partida |
 
-`process_bundle` los combina en el orden correcto: GRID state → Riot summary → GRID livestats → Riot livestats.
+`process_bundle` los combina en el orden correcto: GRID state → GRID game state → Tencent details → Riot summary → GRID livestats → Riot livestats.
+
+En LPL puede no existir Riot summary. En ese caso `Tencent details` actúa como
+end-state autoritativo para stats finales, runas, items y ganador. Riot summary
+sigue teniendo prioridad si existe.
 
 ### El cruce PUUID
 
 Los IDs de Riot (1–10) y los IDs internos de GRID (numéricos) se cruzan a través del PUUID que aparece en ambos lados. `TeamsObserver` mantiene un mapa `puuid → grid_player_id` y actualiza retroactivamente los `Participant` cuando llega información de cualquier fuente.
+
+En LPL, Tencent details y GRID end-state pueden no traer PUUID. Si se procesa
+Riot LiveStats y aparece el evento `game_info`, `TeamsObserver` enriquece los
+participantes ya creados desde Tencent con el `puuid` de Riot.
 
 ---
 
@@ -194,6 +204,15 @@ summary = client.get_riot_summary(series_id="2922522", game_number=1)
 events = client.get_riot_livestats(series_id="2922522", game_number=1)
 # Si quieres el texto crudo: parse_json=False
 
+# Manifest de fragments Riot LiveStats listados por GRID
+manifest = client.get_riot_livestats_manifest(series_id="2923634")
+
+# Descargar fragments Riot usando solo el manifest (útil en LPL)
+fragments = client.get_riot_livestats_fragments(series_id="2923634")
+
+# End-state Tencent para LPL
+tencent = client.get_tencent_details(series_id="2923634", game_number=1)
+
 # Eventos de GRID (ZIP con JSONLs, ya descomprimidos y combinados)
 grid_events = client.get_grid_events(series_id="2922522")
 
@@ -228,7 +247,8 @@ print(player.summoner_name)         # "T1 Faker"
 print(player.champion_name)         # "Orianna"
 print(player.team_side)             # "BLUE" (@property derivada de team_id)
 print(player.grid_player_id)        # ID interno de GRID, o None si no cruzado
-print(player.puuid)                 # PUUID hex
+print(player.puuid)                 # PUUID hex, o "" si la fuente no lo trae
+print(player.tencent_player_id)     # ID Tencent, o None si no aplica
 
 teams.get_player_name(1)            # "T1 Faker" o "Unknown"
 teams.get_player_team(1)            # "BLUE" / "RED" / "UNKNOWN"
@@ -257,9 +277,16 @@ if draft.draft_found:
 # Historial de borradores invalidados (remakes)
 for past in draft.draft_history:
     print(past)
+
+# Diagnóstico de calidad/fallback (útil en LPL)
+draft.get_draft_status()
 ```
 
 **Lógica:** si la serie se rehace solo para invertir lados (ej. ligas ERL sin tecnología de side-pick), `get_draft()` detecta que los 20 campeones coinciden exactamente con un draft anterior y devuelve el original (con la asignación de lados primera). Si cambia algún pick, se considera remake real.
+
+En LPL, si los eventos GRID quedan incompletos por invalidaciones pero `GRID
+end-state` trae las 20 `draftActions`, `get_draft()` puede usar ese draft como
+fallback. La forma de salida no cambia; `get_draft_status()` indica si se usó.
 
 ### `PostGameObserver`
 
@@ -275,7 +302,7 @@ stats = PostGameObserver()
 report = stats.get_game_stats(teams_observer=teams)
 
 report["meta"]["winner"]         # "BLUE" / "RED"
-report["meta"]["winner_source"]  # "summary" | "game_end" | "gold_heuristic"
+report["meta"]["winner_source"]  # "summary" | "tencent_details" | "game_end" | "gold_heuristic"
 report["meta"]["version"]        # "14.1"
 
 for pid, p in report["players"].items():
@@ -285,8 +312,9 @@ for pid, p in report["players"].items():
     #      'runes', 'final_items'}
 ```
 
-**`runes` y `final_items`** salen del Riot Summary (no hay fuente fiable sin él;
-sin summary son `None`):
+**`runes` y `final_items`** salen del Riot Summary. En LPL, si no hay Riot
+Summary, salen de Tencent details. Si no existe ninguna de esas fuentes, son
+`None`:
 
 ```python
 p["final_items"]  # [3047, 3157, 6653, ...]  ← item0..item6 sin los ceros
@@ -298,8 +326,9 @@ p["runes"]        # {'primary_style': 8200, 'primary': [8229, 8275, 8233, 8237],
 **Jerarquía del ganador:**
 
 1. **`summary`:** Riot Summary expone `team.win == True`.
-2. **`game_end`:** evento `rfc461Schema: "game_end"` de Riot LiveStats con campo `winningTeam` (100 = BLUE, 200 = RED). Si la partida termina sana pero sin summary.
-3. **`gold_heuristic`:** fallback para scrims donde nadie esperó al final. Se infiere del último `stats_update`: equipo con más oro = ganador. Marcado explícitamente como `gold_heuristic`.
+2. **`tencent_details`:** Tencent details expone el ganador LPL cuando no hay Riot Summary.
+3. **`game_end`:** evento `rfc461Schema: "game_end"` de Riot LiveStats con campo `winningTeam` (100 = BLUE, 200 = RED). Si la partida termina sana pero sin summary.
+4. **`gold_heuristic`:** fallback para scrims donde nadie esperó al final. Se infiere del último `stats_update`: equipo con más oro = ganador. Marcado explícitamente como `gold_heuristic`.
 
 ### `ObjectiveKilledObserver`
 
@@ -429,14 +458,20 @@ processor.attach(wards_obs)        # depende de TeamsObserver (inyectado en __in
 
 ```python
 processor.process_bundle(
-    grid_state=None,                  # opcional: dict con estado pre-partida
-    riot_summary=riot_summary,        # opcional: dict con end-state
+    grid_state=None,                  # opcional: estado global de GRID
+    grid_game_state=None,             # opcional: GameState concreto de GRID
+    tencent_details=None,             # opcional: end-state Tencent (LPL)
+    riot_summary=riot_summary,        # opcional: dict con end-state Riot
     grid_livestats=grid_events,       # opcional: lista de eventos GRID
-    riot_livestats=riot_events        # opcional: lista de eventos Riot timeline
+    riot_livestats=riot_events,       # opcional: lista de eventos Riot timeline
+    lpl_diagnostics=None              # opcional: diagnóstico externo
 )
 ```
 
-El procesador ordena las fuentes así: `GRID_STATE → RIOT_SUMMARY → GRID livestats → Riot livestats`. Cualquier subconjunto es válido (puedes procesar solo `riot_summary` si quieres únicamente stats finales).
+El procesador ordena las fuentes así: `GRID_STATE → GRID_GAME_STATE →
+TENCENT_DETAILS → RIOT_SUMMARY → GRID livestats → Riot livestats →
+LPL_DIAGNOSTICS`. Cualquier subconjunto es válido (puedes procesar solo
+`riot_summary` si quieres únicamente stats finales).
 
 ### Procesar eventos sueltos
 

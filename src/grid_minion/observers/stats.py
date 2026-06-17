@@ -17,19 +17,35 @@ class PostGameObserver(Observer):
         self.winner: Optional[str] = None
         self.game_version: str = "Unknown"
         self._has_summary = False
+        self._has_tencent = False
         self._winner_source: Optional[str] = None
 
     def notify_event(self, event: Dict[str, Any]):
         """Procesa el fin de partida y los updates de estadísticas."""
-        # 1. RIOT SUMMARY (Prioridad Alta)
+        # 1. GRID GAME STATE (contexto LPL: versión, sin asumir ganador)
+        if event.get("source") == "GRID_GAME_STATE":
+            payload = event.get("payload", {})
+            if payload.get("version") and self.game_version == "Unknown":
+                self.game_version = str(payload["version"])
+            return
+
+        # 2. TENCENT DETAILS (end-state LPL si no hay Riot Summary)
+        if event.get("source") == "TENCENT_DETAILS":
+            if not self._has_summary:
+                payload = event.get("payload", {})
+                self._process_tencent_details(payload)
+                self._has_tencent = True
+            return
+
+        # 3. RIOT SUMMARY (Prioridad Alta)
         if event.get("source") == "RIOT_SUMMARY":
             payload = event.get("payload", {})
             self._process_summary(payload)
             self._has_summary = True
             return
 
-        # 2. RIOT LIVESTATS (Prioridad Media)
-        if not self._has_summary:
+        # 4. RIOT LIVESTATS (fallback si no hay end-state autoritativo)
+        if not self._has_summary and not self._has_tencent:
             rfc_type = event.get("rfc461Schema")
             event_type = event.get("eventType")
             if rfc_type == "game_end" or event_type == "game_end":
@@ -53,6 +69,13 @@ class PostGameObserver(Observer):
                 self._winner_source = "summary"
                 break
         self._process_participants_stats(payload.get("participants", []), source="SUMMARY")
+
+    def _process_tencent_details(self, payload: Dict[str, Any]):
+        """Extrae estadísticas finales desde el end-state normalizado de Tencent."""
+        if payload.get("winner"):
+            self.winner = payload["winner"]
+            self._winner_source = "tencent_details"
+        self._process_participants_stats(payload.get("participants", []), source="TENCENT_DETAILS")
 
     def _process_game_end(self, event: Dict[str, Any]):
         """Extrae el ganador del evento game_end de Riot LiveStats."""
@@ -98,6 +121,15 @@ class PostGameObserver(Observer):
                 # runes y final_items solo existen en el summary.
                 runes = self._collapse_runes(p.get("perks"))
                 final_items = self._final_items(p)
+            elif source == "TENCENT_DETAILS":
+                kills = p.get("kills", 0)
+                deaths = p.get("deaths", 0)
+                assists = p.get("assists", 0)
+                gold = p.get("gold", 0)
+                cs = p.get("cs", 0)
+                dmg = p.get("damage_dealt", 0)
+                runes = p.get("runes")
+                final_items = p.get("final_items")
             else:
                 stats_list = p.get("stats", [])
                 stats_dict = {}
@@ -168,7 +200,11 @@ class PostGameObserver(Observer):
             "meta": {
                 "winner": self.winner,
                 "version": self.game_version,
-                "source": "SUMMARY" if self._has_summary else "LIVESTATS",
+                "source": (
+                    "SUMMARY" if self._has_summary
+                    else "TENCENT_DETAILS" if self._has_tencent
+                    else "LIVESTATS"
+                ),
                 "winner_source": self._winner_source
             },
             "players": {}

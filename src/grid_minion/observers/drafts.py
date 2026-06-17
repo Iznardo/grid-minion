@@ -20,6 +20,10 @@ class DraftObserver(Observer):
     def reset(self):
         """Reinicia el estado global para una nueva serie/partida."""
         self.draft_history = []
+        self._fallback_draft: Optional[Dict[str, Any]] = None
+        self._fallback_source: Optional[str] = None
+        self._invalidations = 0
+        self._aborts = 0
         self._reset_current_draft()
 
     def _reset_current_draft(self):
@@ -39,6 +43,13 @@ class DraftObserver(Observer):
 
     def notify_event(self, event: Dict[str, Any]):
         """Procesa eventos relacionados con picks, bans e invalidaciones."""
+        if event.get("source") in ["GRID_GAME_STATE", "TENCENT_DETAILS"]:
+            payload = event.get("payload", {})
+            draft = payload.get("draft")
+            if draft:
+                self._set_fallback_draft(draft, event.get("source"))
+            return
+
         events_list = event.get("events", []) if "events" in event else [event]
 
         for e in events_list:
@@ -47,6 +58,10 @@ class DraftObserver(Observer):
                 # La partida arranca: el draft queda congelado.
                 self._game_started = True
             if ev_type in ["grid-invalidated-series", "game-aborted"]:
+                if ev_type == "grid-invalidated-series":
+                    self._invalidations += 1
+                else:
+                    self._aborts += 1
                 # Solo es un remake real si llega ANTES de empezar la partida.
                 # Una invalidación mid-game es una reconexión de feed de GRID y
                 # descartaría un draft válido y completo.
@@ -56,6 +71,13 @@ class DraftObserver(Observer):
             if ev_type in ["team-banned-character", "team-picked-character",
                            "team-!banned-character", "team-!picked-character"]:
                 self._process_draft_action(e)
+
+    def _set_fallback_draft(self, draft: Dict[str, Any], source: Optional[str]):
+        """Guarda un draft auxiliar completo sin interferir con eventos GRID."""
+        if self._fallback_draft and self._fallback_draft.get("is_complete"):
+            return
+        self._fallback_draft = draft
+        self._fallback_source = source.lower() if source else None
 
     def _handle_invalidation(self):
         """Guarda el estado del draft actual como invalidado y reinicia la mesa."""
@@ -182,6 +204,13 @@ class DraftObserver(Observer):
         """
         if name is None:
             return None
+        if isinstance(name, dict):
+            raw_name = name.get("name")
+            numeric_id = name.get("id")
+            if raw_name:
+                riot_id, resolved_id = normalize_champion(raw_name)
+                return {"name": riot_id, "id": numeric_id or resolved_id}
+            return {"name": None, "id": int(numeric_id) if numeric_id else None}
         riot_id, numeric_id = normalize_champion(name)
         return {"name": riot_id, "id": numeric_id}
 
@@ -223,4 +252,30 @@ class DraftObserver(Observer):
                     if len(hist_champs) == 20 and hist_champs == curr_champs:
                         chosen = hist_draft
                         break
+        elif self._fallback_draft and (
+            not current_draft["draft_found"] or not current_draft["is_complete"]
+        ):
+            # LPL puede invalidar/partir el feed de GRID y dejar picks fuera del
+            # stream. `state-grid` trae las 20 acciones finales y es un fallback
+            # explícito, no un cambio del contrato público.
+            chosen = self._fallback_draft
         return self._normalize_draft(chosen)
+
+    def get_draft_status(self) -> Dict[str, Any]:
+        """Devuelve diagnóstico de calidad/fuentes sin alterar `get_draft()`."""
+        current = self._export_current_state()
+        uses_fallback = bool(
+            self._fallback_draft
+            and (not current["draft_found"] or not current["is_complete"])
+        )
+        return {
+            "current_complete": current["is_complete"],
+            "current_found": current["draft_found"],
+            "fallback_available": self._fallback_draft is not None,
+            "fallback_complete": bool(self._fallback_draft and self._fallback_draft.get("is_complete")),
+            "uses_fallback": uses_fallback,
+            "fallback_source": self._fallback_source,
+            "invalidations": self._invalidations,
+            "aborts": self._aborts,
+            "game_started": self._game_started,
+        }
