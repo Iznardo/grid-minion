@@ -33,3 +33,6 @@ AUDIT.md
 CLAUDE.md
 GRID_MINION_REFERENCIA.md
 docs/
+AGENTS.md
+.cursor/
+.claude/
