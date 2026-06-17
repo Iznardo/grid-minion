@@ -2,7 +2,7 @@ from typing import Dict, Any, Optional, List
 
 
 def _side(raw: Optional[str]) -> str:
-    value = str(raw or "").upper()
+    value = str(raw or "").strip().upper()
     if value == "BLUE":
         return "BLUE"
     if value == "RED":
@@ -10,12 +10,20 @@ def _side(raw: Optional[str]) -> str:
     return "UNKNOWN"
 
 
-def _riot_team_id(side: str) -> int:
-    return 100 if side == "BLUE" else 200
+def _riot_team_id(side: str) -> Optional[int]:
+    if side == "BLUE":
+        return 100
+    if side == "RED":
+        return 200
+    return None
 
 
-def _participant_base(side: str) -> int:
-    return 1 if side == "BLUE" else 6
+def _participant_base(side: str) -> Optional[int]:
+    if side == "BLUE":
+        return 1
+    if side == "RED":
+        return 6
+    return None
 
 
 def extract_grid_game_state(grid_state: Optional[Dict[str, Any]], game_number: int) -> Optional[Dict[str, Any]]:
@@ -47,8 +55,9 @@ def _participant(player: Dict[str, Any], team: Dict[str, Any], index: int) -> Di
     side = _side(team.get("side"))
     character = player.get("character") or {}
     name = player.get("name") or player.get("nickname") or "Unknown"
+    participant_base = _participant_base(side)
     return {
-        "participantId": _participant_base(side) + index,
+        "participantId": participant_base + index if participant_base is not None else None,
         "teamId": _riot_team_id(side),
         "riotIdGameName": name,
         "summonerName": name,

@@ -5,8 +5,8 @@ import tempfile
 import shutil
 from unittest import mock
 
-from src.grid_minion.champions import ChampionResolver
-from src.grid_minion.exceptions import GridNetworkError
+from grid_minion.champions import ChampionResolver
+from grid_minion.exceptions import GridNetworkError
 
 
 def _fake_response(payload, status=200):
@@ -70,7 +70,7 @@ class TestChampionResolverNetwork(unittest.TestCase):
                 return _fake_response(["14.10.1"])
             return _fake_response(self._champion_payload())
 
-        with mock.patch("src.grid_minion.champions.requests.get", side_effect=fake_get) as m:
+        with mock.patch("grid_minion.champions.requests.get", side_effect=fake_get) as m:
             resolver = ChampionResolver()
             self.assertEqual(resolver.normalize("Wukong"), ("MonkeyKing", 62))
             self.assertEqual(resolver.version, "14.10.1")
@@ -102,7 +102,7 @@ class TestChampionResolverNetwork(unittest.TestCase):
                 return _fake_response(["14.10.1"])
             raise AssertionError("No debería descargar champion.json si la versión coincide")
 
-        with mock.patch("src.grid_minion.champions.requests.get", side_effect=fake_get):
+        with mock.patch("grid_minion.champions.requests.get", side_effect=fake_get):
             resolver = ChampionResolver()
             self.assertEqual(resolver.normalize("Wukong"), ("MonkeyKing", 62))
 
@@ -119,14 +119,14 @@ class TestChampionResolverNetwork(unittest.TestCase):
             }, fh)
 
         import requests
-        with mock.patch("src.grid_minion.champions.requests.get",
+        with mock.patch("grid_minion.champions.requests.get",
                         side_effect=requests.exceptions.ConnectionError("offline")):
             resolver = ChampionResolver(max_retries=1)
             self.assertEqual(resolver.normalize("Wukong"), ("MonkeyKing", 62))
 
     def test_sin_red_ni_cache_lanza_excepcion(self):
         import requests
-        with mock.patch("src.grid_minion.champions.requests.get",
+        with mock.patch("grid_minion.champions.requests.get",
                         side_effect=requests.exceptions.ConnectionError("offline")):
             resolver = ChampionResolver(max_retries=1)
             with self.assertRaises(GridNetworkError):

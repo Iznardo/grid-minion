@@ -224,7 +224,8 @@ Ambos clientes gestionan automáticamente:
 - HTTP 429 con `Retry-After`.
 - Rate limits en el body GraphQL (`ENHANCE_YOUR_CALM`).
 - Reintentos con backoff exponencial (`5 × 1.5^(n-1)`).
-- Errores 5xx con reintentos, 4xx con excepciones tipadas.
+- Errores 5xx con reintentos; 401/403 con `GridAuthError`; otros 4xx con `GridAPIError`.
+- En descargas REST de ficheros opcionales, 404 → `None` para poder componer fallbacks.
 
 ---
 
@@ -532,7 +533,7 @@ GridError                    # base
 ├── GridAPIError             # error devuelto por la API
 │   ├── GridAuthError        # 401, 403
 │   ├── GridRateLimitError   # 429 o ENHANCE_YOUR_CALM tras agotar reintentos
-│   └── GridResourceNotFoundError
+│   └── GridResourceNotFoundError  # reservado; los 404 REST opcionales devuelven None
 ├── GridNetworkError         # timeout, DNS, conexión perdida
 └── GridDataError            # JSON malformado, ZIP corrupto
 ```
@@ -583,6 +584,7 @@ La suite incluye:
 - Tests unitarios por observer (`test_observers_unit.py`).
 - Test de integración con samples (`test_observers.py`).
 - Tests de paginación y mock de GraphQL (`test_gql_mock.py`).
+- Tests del cliente REST (`test_rest_client.py`).
 - Tests de `split_grid_series` (`test_utils.py`).
 
 ### Estructura del repositorio
@@ -590,13 +592,18 @@ La suite incluye:
 ```
 src/grid_minion/
 ├── __init__.py
+├── champions.py             # normalización Data Dragon
 ├── exceptions.py
 ├── graphql_client.py        # cliente GraphQL (Data Central + Live Data)
 ├── rest_client.py           # cliente REST (descarga de archivos)
 ├── utils.py                 # split_grid_series
+├── sources/
+│   ├── grid_state.py        # normalizador de GRID game-state
+│   └── tencent.py           # normalizador de Tencent details
 └── observers/
     ├── __init__.py
     ├── base.py              # clase abstracta Observer
+    ├── builds.py            # BuildObserver
     ├── processor.py         # GameEventProcessor
     ├── teams.py             # TeamsObserver + Participant
     ├── drafts.py            # DraftObserver
@@ -609,6 +616,7 @@ tests/
 ├── test_observers.py        # integración end-to-end
 ├── test_observers_unit.py   # unitarios por observer
 ├── test_gql_mock.py         # mocks del cliente GraphQL
+├── test_rest_client.py      # mocks del cliente REST
 └── test_utils.py
 ```
 

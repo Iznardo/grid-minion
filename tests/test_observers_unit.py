@@ -4,6 +4,7 @@ from grid_minion.observers import (
     PostGameObserver, ObjectiveKilledObserver, WardsObserver, BuildObserver
 )
 from grid_minion.champions import ChampionResolver, set_default_resolver
+from grid_minion.sources import normalize_grid_game_state, normalize_tencent_details
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +166,23 @@ class TestPostGameObserver(unittest.TestCase):
         self.assertEqual(meta["winner"], "BLUE")
         self.assertEqual(meta["winner_source"], "gold_heuristic")
 
+    def test_gold_heuristic_needs_both_teams(self):
+        obs = PostGameObserver()
+        obs.notify_event({"rfc461Schema": "stats_update", "participants": [],
+                          "teams": []})
+        meta = obs.get_game_stats()["meta"]
+        self.assertIsNone(meta["winner"])
+        self.assertIsNone(meta["winner_source"])
+
+    def test_gold_heuristic_ignores_ties(self):
+        obs = PostGameObserver()
+        obs.notify_event({"rfc461Schema": "stats_update", "participants": [],
+                          "teams": [{"teamID": 100, "totalGold": 8000},
+                                    {"teamID": 200, "totalGold": 8000}]})
+        meta = obs.get_game_stats()["meta"]
+        self.assertIsNone(meta["winner"])
+        self.assertIsNone(meta["winner_source"])
+
     def test_game_end_beats_gold_heuristic(self):
         """game_end debe ganar al oro aunque llegue después."""
         obs = PostGameObserver()
@@ -324,6 +342,48 @@ class TestLPLSources(unittest.TestCase):
         self.assertEqual(report["meta"]["winner_source"], "tencent_details")
         self.assertEqual(report["players"][1]["final_items"], [1055, 3031, 3363])
         self.assertEqual(report["players"][1]["runes"]["primary"], [8008, 9111, 9103, 8017])
+
+    def test_tencent_winner_accepts_mixed_id_types(self):
+        payload = _tencent_details()
+        payload["blueTeam"] = "1"
+        payload["matchWin"] = 1
+
+        normalized = normalize_tencent_details(payload)
+
+        self.assertEqual(normalized["winner"], "BLUE")
+        self.assertTrue(normalized["teams"][0]["win"])
+
+    def test_tencent_unknown_side_does_not_become_red(self):
+        payload = {
+            "blueTeam": 1,
+            "matchWin": 1,
+            "teamInfos": [{
+                "teamId": 3,
+                "teamSide": "GREEN",
+                "playerInfos": [_lpl_player("UNKNOWN1", "TOP", "Champ", 1)],
+            }],
+        }
+
+        normalized = normalize_tencent_details(payload)
+
+        self.assertIsNone(normalized["teams"][0]["teamId"])
+        self.assertEqual(normalized["teams"][0]["side"], "UNKNOWN")
+        self.assertIsNone(normalized["participants"][0]["participantId"])
+        self.assertIsNone(normalized["participants"][0]["teamId"])
+
+    def test_grid_game_state_unknown_side_does_not_become_red(self):
+        normalized = normalize_grid_game_state({
+            "teams": [{
+                "id": "T1",
+                "side": "UNKNOWN",
+                "players": [{"id": "P1", "name": "Player", "character": {"name": "Ahri"}}],
+            }]
+        })
+
+        self.assertIsNone(normalized["teams"][0]["teamId"])
+        self.assertEqual(normalized["teams"][0]["side"], "UNKNOWN")
+        self.assertIsNone(normalized["participants"][0]["participantId"])
+        self.assertIsNone(normalized["participants"][0]["teamId"])
 
     def test_riot_game_info_enriches_puuid_after_tencent(self):
         processor = GameEventProcessor()

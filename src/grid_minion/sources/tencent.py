@@ -14,7 +14,7 @@ ROLE_ORDER = {
 
 
 def _team_side(team: Dict[str, Any]) -> str:
-    raw = str(team.get("teamSide", "")).upper()
+    raw = str(team.get("teamSide", "")).strip().upper()
     if raw == "BLUE":
         return "BLUE"
     if raw == "RED":
@@ -22,12 +22,24 @@ def _team_side(team: Dict[str, Any]) -> str:
     return "UNKNOWN"
 
 
-def _riot_team_id(side: str) -> int:
-    return 100 if side == "BLUE" else 200
+def _riot_team_id(side: str) -> Optional[int]:
+    if side == "BLUE":
+        return 100
+    if side == "RED":
+        return 200
+    return None
 
 
-def _participant_base(side: str) -> int:
-    return 1 if side == "BLUE" else 6
+def _participant_base(side: str) -> Optional[int]:
+    if side == "BLUE":
+        return 1
+    if side == "RED":
+        return 6
+    return None
+
+
+def _id_key(value: Any) -> Optional[str]:
+    return str(value) if value is not None else None
 
 
 def _item_id(item: Optional[Dict[str, Any]]) -> Optional[int]:
@@ -75,7 +87,8 @@ def _participant(player: Dict[str, Any], team: Dict[str, Any], index: int) -> Di
     damage = player.get("damageDetail") or {}
     other = player.get("otherDetail") or {}
     vision = player.get("visionDetail") or {}
-    participant_id = _participant_base(side) + index
+    participant_base = _participant_base(side)
+    participant_id = participant_base + index if participant_base is not None else None
     return {
         "participantId": participant_id,
         "teamId": _riot_team_id(side),
@@ -142,9 +155,11 @@ def normalize_tencent_details(payload: Optional[Dict[str, Any]]) -> Dict[str, An
 
     blue_team_id = payload.get("blueTeam")
     winner_team_id = payload.get("matchWin")
+    blue_team_key = _id_key(blue_team_id)
+    winner_team_key = _id_key(winner_team_id)
     winner = None
-    if winner_team_id is not None and blue_team_id is not None:
-        winner = "BLUE" if winner_team_id == blue_team_id else "RED"
+    if winner_team_key is not None and blue_team_key is not None:
+        winner = "BLUE" if winner_team_key == blue_team_key else "RED"
 
     teams = []
     participants = []
@@ -155,7 +170,7 @@ def normalize_tencent_details(payload: Optional[Dict[str, Any]]) -> Dict[str, An
             "teamId": _riot_team_id(side),
             "side": side,
             "tencent_team_id": team.get("teamId"),
-            "win": team.get("teamId") == winner_team_id,
+            "win": _id_key(team.get("teamId")) == winner_team_key,
             "kills": int(team.get("kills", 0) or 0),
             "gold": int(team.get("golds", 0) or 0),
             "dragons": int(team.get("dragonAmount", 0) or 0),
@@ -164,9 +179,11 @@ def normalize_tencent_details(payload: Optional[Dict[str, Any]]) -> Dict[str, An
         })
         for idx, player in enumerate(_ordered_players(team)):
             participants.append(_participant(player, team, idx))
-        draft_by_team_id[str(team.get("teamId"))] = _draft_side(team)
+        team_key = _id_key(team.get("teamId"))
+        if team_key is not None:
+            draft_by_team_id[team_key] = _draft_side(team)
 
-    first_pick_id = str(payload.get("bpFirstTeam"))
+    first_pick_id = _id_key(payload.get("bpFirstTeam"))
     first = draft_by_team_id.get(first_pick_id)
     second = next((d for tid, d in draft_by_team_id.items() if tid != first_pick_id), None)
     draft = None

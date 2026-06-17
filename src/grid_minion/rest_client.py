@@ -10,7 +10,6 @@ from .exceptions import (
     GridAPIError, 
     GridAuthError, 
     GridRateLimitError, 
-    GridResourceNotFoundError, 
     GridNetworkError, 
     GridDataError
 )
@@ -78,7 +77,11 @@ class GridRestClient:
                 if response.status_code in [401, 403]:
                     raise GridAuthError(f"Error de autenticación {response.status_code}: Verifique su API Key.", status_code=response.status_code)
 
-                # --- 4. GESTIÓN DE ERRORES DE SERVIDOR (5xx) ---
+                # --- 4. GESTIÓN DE OTROS ERRORES DE CLIENTE (4xx) ---
+                if 400 <= response.status_code < 500:
+                    raise GridAPIError(f"Error HTTP {response.status_code}: petición REST rechazada.", status_code=response.status_code)
+
+                # --- 5. GESTIÓN DE ERRORES DE SERVIDOR (5xx) ---
                 if response.status_code >= 500:
                     if attempt == self.max_retries:
                          raise GridAPIError(f"Error de servidor persistente {response.status_code}.", status_code=response.status_code)
@@ -87,9 +90,6 @@ class GridRestClient:
                     time.sleep(default_wait)
                     continue
 
-                # Si llegamos aquí y no es 200 OK, lanzamos error genérico de API
-                response.raise_for_status()
-                
                 return response
 
             except requests.exceptions.RequestException as e:

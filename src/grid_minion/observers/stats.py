@@ -90,13 +90,17 @@ class PostGameObserver(Observer):
         # Solo usamos el oro como fallback si no tenemos un ganador más fiable
         if self._winner_source != "game_end":
             teams_data = event.get("teams", [])
-            blue_gold = 0
-            red_gold = 0
+            blue_gold = None
+            red_gold = None
             for t in teams_data:
                 tid = t.get("teamID") or t.get("teamId")
                 gold = t.get("totalGold", 0)
-                if tid == 100: blue_gold = gold
-                elif tid == 200: red_gold = gold
+                if str(tid) == "100":
+                    blue_gold = gold
+                elif str(tid) == "200":
+                    red_gold = gold
+            if blue_gold is None or red_gold is None or blue_gold == red_gold:
+                return
             self.winner = "BLUE" if blue_gold > red_gold else "RED"
             self._winner_source = "gold_heuristic"
 

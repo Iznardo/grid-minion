@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from grid_minion.graphql_client import GridGraphQLClient
+from grid_minion.exceptions import GridAPIError, GridAuthError
 
 class TestGridGraphQLClient(unittest.TestCase):
 
@@ -58,10 +59,12 @@ class TestGridGraphQLClient(unittest.TestCase):
         }
 
         mock_resp_1 = MagicMock()
+        mock_resp_1.status_code = 200
         mock_resp_1.json.return_value = page_1
         mock_resp_1.raise_for_status.return_value = None
 
         mock_resp_2 = MagicMock()
+        mock_resp_2.status_code = 200
         mock_resp_2.json.return_value = page_2
         mock_resp_2.raise_for_status.return_value = None
 
@@ -72,6 +75,29 @@ class TestGridGraphQLClient(unittest.TestCase):
         self.assertEqual(mock_post.call_count, 2)
         self.assertEqual(ids, ["ID_A", "ID_B"])
         print("\nTest de Paginacion superado (Grid Minion)")
+
+    @patch('grid_minion.graphql_client.requests.Session.post')
+    def test_query_central_401_raises_auth_error(self, mock_post):
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_post.return_value = mock_response
+
+        with self.assertRaises(GridAuthError):
+            self.client.query_central("query { test }")
+
+    def test_get_series_rejects_invalid_game_type(self):
+        with self.assertRaises(GridAPIError):
+            self.client.get_series(game_type='COMPETITIVE) { injected')
+
+    def test_get_series_state_uses_variables(self):
+        with patch.object(self.client, "query_live", return_value={"seriesState": {"id": "123", "games": []}}) as mock_query:
+            state = self.client.get_series_state('123") { injected')
+
+        query = mock_query.call_args.args[0]
+        variables = mock_query.call_args.kwargs["variables"]
+        self.assertNotIn('123") { injected', query)
+        self.assertEqual(variables, {"seriesId": '123") { injected'})
+        self.assertEqual(state["id"], "123")
 
 if __name__ == '__main__':
     unittest.main()

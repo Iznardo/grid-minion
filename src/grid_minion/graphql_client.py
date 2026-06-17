@@ -2,10 +2,12 @@ import requests
 import json
 import time
 import logging
+import re
 from typing import List, Dict, Any, Optional, Union
-from .exceptions import GridAPIError, GridRateLimitError, GridNetworkError, GridError
+from .exceptions import GridAPIError, GridAuthError, GridRateLimitError, GridNetworkError, GridError
 
 logger = logging.getLogger(__name__)
+GRAPHQL_ENUM_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
 class GridGraphQLClient:
     """
@@ -45,8 +47,8 @@ class GridGraphQLClient:
         # Bucle de reintentos
         for attempt in range(1, self.max_retries + 1):
             try:
-                # Factor de espera: 2s, 3s, 4.5s, 6.75s... (Más lento que antes)
-                default_wait = 10 * (1.5 ** (attempt - 1))
+                # Backoff exponencial (5s, 7.5s, 11.25s...)
+                default_wait = 5 * (1.5 ** (attempt - 1))
 
                 response = self.session.post(url, json=payload, timeout=self.timeout)
                 
@@ -62,10 +64,31 @@ class GridGraphQLClient:
                     time.sleep(wait_time)
                     continue 
 
-                # Si es otro error HTTP (5xx, etc)
-                response.raise_for_status()
+                # --- 2. GESTIÓN DE ERRORES DE AUTENTICACIÓN Y CLIENTE ---
+                if response.status_code in [401, 403]:
+                    raise GridAuthError(
+                        f"Error de autenticación {response.status_code}: Verifique su API Key.",
+                        status_code=response.status_code,
+                    )
+
+                if 400 <= response.status_code < 500:
+                    raise GridAPIError(
+                        f"Error HTTP {response.status_code} en GraphQL.",
+                        status_code=response.status_code,
+                    )
+
+                # --- 3. GESTIÓN DE ERRORES DE SERVIDOR (5xx) ---
+                if response.status_code >= 500:
+                    if attempt == self.max_retries:
+                        raise GridAPIError(
+                            f"Error de servidor persistente {response.status_code}.",
+                            status_code=response.status_code,
+                        )
+                    logger.warning(f"Error Servidor {response.status_code}. Reintentando en {default_wait:.2f}s...")
+                    time.sleep(default_wait)
+                    continue
                 
-                # --- 2. GESTIÓN DE ERRORES EN EL BODY (GraphQL) ---
+                # --- 4. GESTIÓN DE ERRORES EN EL BODY (GraphQL) ---
                 data = response.json()
                 
                 if "errors" in data:
@@ -171,6 +194,11 @@ class GridGraphQLClient:
         filter_parts += f'\n titleIds: {{ in: {json.dumps(title_id)} }}'
 
         if game_type:
+            if not GRAPHQL_ENUM_RE.match(str(game_type)):
+                raise GridAPIError(
+                    f"game_type no válido para GraphQL enum: {game_type!r}",
+                    details={"game_type": game_type},
+                )
             filter_parts += f'\n types: {game_type}'
 
         if team_ids:
@@ -275,18 +303,18 @@ query GetTournaments($name: String!, $after: String) {
         Returns:
             Dict[str, Any]: Diccionario con el estado de la serie y sus partidas.
         """
-        query = f"""
-        query {{
-            seriesState(id: {series_id}) {{
+        query = """
+        query GetSeriesState($seriesId: ID!) {
+            seriesState(id: $seriesId) {
                 id
-                games {{
+                games {
                     id
                     sequenceNumber
                     started
                     finished
-                }}
-            }}
-        }}
+                }
+            }
+        }
         """
-        data = self.query_live(query)
+        data = self.query_live(query, variables={"seriesId": str(series_id)})
         return data["seriesState"]
