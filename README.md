@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-Cliente de Python no oficial para las APIs de [GRID.gg](https://grid.gg/), enfocado en datos competitivos de League of Legends. Combina descarga de datos (GraphQL + REST) con un sistema de observers que reconstruye automáticamente equipos, drafts, objetivos, visión y estadísticas a partir del cruce de datos de GRID y Riot.
+Cliente de Python no oficial para las APIs de [GRID.gg](https://grid.gg/), enfocado en datos competitivos de League of Legends. Combina descarga de datos (GraphQL + REST) con un sistema de observers que reconstruye automáticamente equipos, drafts, objetivos, visión, estadísticas, builds y análisis mid-game a partir del cruce de datos de GRID y Riot.
 
 ---
 
@@ -22,6 +22,8 @@ Cliente de Python no oficial para las APIs de [GRID.gg](https://grid.gg/), enfoc
   - [ObjectiveKilledObserver](#objectivekilledobserver)
   - [WardsObserver](#wardsobserver)
   - [BuildObserver](#buildobserver)
+  - [MidGameStatsObserver](#midgamestatsobserver)
+  - [SoloKillObserver](#solokillobserver)
 - [GameEventProcessor](#gameeventprocessor)
 - [Utilidades](#utilidades)
 - [Manejo de errores](#manejo-de-errores)
@@ -393,6 +395,66 @@ for pid, b in builds.get_builds().items():
 `build_path` está en orden cronológico, con los `item_undo` ya resueltos. El
 `skill_order` mapea `1→Q, 2→W, 3→E, 4→R` y excluye evoluciones (Kha'Zix, Viktor).
 
+### `MidGameStatsObserver`
+
+Captura snapshots de **CS, oro y XP** por jugador en marcas de tiempo concretas
+(por defecto minuto **7** y minuto **14**), a partir de los eventos `stats_update`
+de la timeline de Riot (`riot_livestats`). Útil para analizar la laning phase sin
+depender del end-state. Sin dependencias; opcionalmente recibe un `TeamsObserver`
+en el getter para enriquecer con nombre/lado/campeón.
+
+```python
+from grid_minion.observers import MidGameStatsObserver
+
+mid = MidGameStatsObserver()                 # marcas por defecto: 7 y 14
+# mid = MidGameStatsObserver(marks_minutes=[5, 10, 15])  # personalizable
+# ... tras process_bundle (necesita riot_livestats) ...
+
+for pid, data in mid.get_mid_game_stats(teams_observer=teams).items():
+    m7 = data["marks"][7]
+    print(data["name"], m7["cs"], m7["gold"], m7["xp"])
+    # data = {
+    #   "marks": {
+    #       7:  {"cs": 56, "gold": 2258, "xp": 2891, "game_time_s": 420.0},
+    #       14: {"cs": 121, "gold": 5400, "xp": 8900, "game_time_s": 840.0},
+    #   },
+    #   "name": "SLY Kryze", "side": "BLUE",
+    #   "champion": "Rumble", "champion_id": 68,   # solo con teams_observer
+    # }
+```
+
+Semántica del snapshot: para cada marca se toma el **último** `stats_update` con
+`gameTime <= marca`. Si la partida termina antes de alcanzar una marca (p.ej. FF
+antes del 14), esa marca queda con `cs`/`gold`/`xp`/`game_time_s` en `None` (no se
+reportan valores obsoletos). El CS incluye súbditos de jungla
+(`MINIONS_KILLED + NEUTRAL_MINIONS_KILLED`).
+
+### `SoloKillObserver`
+
+Detecta **solokills**: muertes de campeón sin asistentes (un solo jugador
+participa). Por cada una registra killer, víctima, instante y posición en el mapa.
+Depende de `TeamsObserver` para resolver nombres y lados.
+
+```python
+from grid_minion.observers import SoloKillObserver
+
+solos = SoloKillObserver(teams_observer=teams)  # inyección obligatoria
+# ... tras process_bundle (necesita riot_livestats) ...
+
+for k in solos.get_solokills():
+    print(f"[{k['time']:.0f}s] {k['killer']} ({k['killer_side']}) → {k['victim']}")
+    # k = {
+    #   "time": 420.0,
+    #   "killer": "GL OMON", "killer_id": 8, "killer_side": "RED",
+    #   "victim": "SLY Kryze", "victim_id": 1, "victim_side": "BLUE",
+    #   "position": {"x": 7853, "y": 7548},
+    # }
+```
+
+Un `champion_kill` cuenta como solokill solo si `assistants` está vacío y tanto
+killer como víctima son jugadores (1-10); las ejecuciones por torre/minion se
+descartan.
+
 ---
 
 ## GameEventProcessor
@@ -453,6 +515,8 @@ processor.attach(draft_obs)        # sin dependencias
 processor.attach(stats_obs)        # usa TeamsObserver en get_game_stats
 processor.attach(objectives_obs)   # sin dependencias
 processor.attach(wards_obs)        # depende de TeamsObserver (inyectado en __init__)
+processor.attach(midgame_obs)      # sin dependencias (recibe TeamsObserver en el getter)
+processor.attach(solokill_obs)     # depende de TeamsObserver (inyectado en __init__)
 ```
 
 ### Procesar un bundle completo

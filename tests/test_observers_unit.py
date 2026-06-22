@@ -1,7 +1,8 @@
 import unittest
 from grid_minion.observers import (
     GameEventProcessor, TeamsObserver, DraftObserver,
-    PostGameObserver, ObjectiveKilledObserver, WardsObserver, BuildObserver
+    PostGameObserver, ObjectiveKilledObserver, WardsObserver, BuildObserver,
+    MidGameStatsObserver, SoloKillObserver
 )
 from grid_minion.champions import ChampionResolver, set_default_resolver
 from grid_minion.sources import normalize_grid_game_state, normalize_tencent_details
@@ -663,6 +664,146 @@ class TestGameEventProcessorIsolation(unittest.TestCase):
         }])
 
         self.assertEqual(len(good_obs.get_all_objectives()["barons"]), 1)
+
+
+# ---------------------------------------------------------------------------
+# MidGameStatsObserver
+# ---------------------------------------------------------------------------
+
+class TestMidGameStatsObserver(unittest.TestCase):
+
+    def _stats_update(self, game_time, participants):
+        return {"rfc461Schema": "stats_update", "gameTime": game_time,
+                "participants": participants}
+
+    def _player(self, pid, minions, neutrals, total_gold, xp):
+        # Forma real del feed: id 'participantID', XP/totalGold a nivel participante,
+        # CS en la lista 'stats' (neutrales pueden venir como float).
+        return {"participantID": pid, "XP": xp, "totalGold": total_gold,
+                "stats": [{"name": "MINIONS_KILLED", "value": minions},
+                          {"name": "NEUTRAL_MINIONS_KILLED", "value": neutrals}]}
+
+    def test_snapshot_takes_last_before_mark(self):
+        obs = MidGameStatsObserver()
+        # 6:00 y 7:00 caen en la marca 7; gana el de 7:00.
+        obs.notify_event(self._stats_update(360000, [self._player(1, 40, 0, 2000, 2500)]))
+        obs.notify_event(self._stats_update(420000, [self._player(1, 56, 0, 2258, 2891)]))
+        # 7:10 ya pasa la marca 7: no debe sobrescribir.
+        obs.notify_event(self._stats_update(430000, [self._player(1, 60, 0, 2400, 3000)]))
+        mark7 = obs.get_mid_game_stats()[1]["marks"][7]
+        self.assertEqual(mark7["cs"], 56)
+        self.assertEqual(mark7["gold"], 2258)
+        self.assertEqual(mark7["xp"], 2891)
+        self.assertAlmostEqual(mark7["game_time_s"], 420.0)
+
+    def test_cs_includes_jungle_neutrals(self):
+        obs = MidGameStatsObserver()
+        # Jungla: MINIONS_KILLED=0, NEUTRAL_MINIONS_KILLED=40 (float, como en el feed).
+        obs.notify_event(self._stats_update(420000,
+                         [self._player(2, 0, 40.00000762939453, 1945, 1964)]))
+        self.assertEqual(obs.get_mid_game_stats()[2]["marks"][7]["cs"], 40)
+
+    def test_mark_not_reached_is_none(self):
+        obs = MidGameStatsObserver()
+        # Partida que solo llega al minuto 7: la marca 14 queda en None.
+        obs.notify_event(self._stats_update(420000, [self._player(1, 56, 0, 2258, 2891)]))
+        marks = obs.get_mid_game_stats()[1]["marks"]
+        self.assertEqual(marks[7]["cs"], 56)
+        self.assertIsNone(marks[14]["cs"])
+        self.assertIsNone(marks[14]["gold"])
+        self.assertIsNone(marks[14]["xp"])
+        self.assertIsNone(marks[14]["game_time_s"])
+
+    def test_custom_marks(self):
+        obs = MidGameStatsObserver(marks_minutes=[10])
+        obs.notify_event(self._stats_update(600000, [self._player(1, 80, 0, 4000, 5000)]))
+        stats = obs.get_mid_game_stats()[1]["marks"]
+        self.assertIn(10, stats)
+        self.assertNotIn(7, stats)
+
+    def test_enriched_with_teams_observer(self):
+        teams = TeamsObserver()
+        teams.notify_event({"source": "RIOT_SUMMARY", "payload": {"participants": [
+            {"participantId": 1, "riotIdGameName": "Faker", "teamId": 100,
+             "championName": "Orianna", "puuid": "aaa"},
+        ]}})
+        obs = MidGameStatsObserver()
+        obs.notify_event(self._stats_update(420000, [self._player(1, 56, 0, 2258, 2891)]))
+        entry = obs.get_mid_game_stats(teams_observer=teams)[1]
+        self.assertEqual(entry["name"], "Faker")
+        self.assertEqual(entry["side"], "BLUE")
+        self.assertEqual(entry["champion"], "Orianna")
+
+    def test_non_stats_event_ignored(self):
+        obs = MidGameStatsObserver()
+        obs.notify_event({"rfc461Schema": "ward_placed"})
+        self.assertEqual(obs.get_mid_game_stats(), {})
+
+    def test_reset(self):
+        obs = MidGameStatsObserver()
+        obs.notify_event(self._stats_update(420000, [self._player(1, 56, 0, 2258, 2891)]))
+        obs.reset()
+        self.assertEqual(obs.get_mid_game_stats(), {})
+
+
+# ---------------------------------------------------------------------------
+# SoloKillObserver
+# ---------------------------------------------------------------------------
+
+class TestSoloKillObserver(unittest.TestCase):
+
+    def _make_teams_obs(self):
+        obs = TeamsObserver()
+        obs.notify_event({"source": "RIOT_SUMMARY", "payload": {"participants": [
+            {"participantId": 1, "riotIdGameName": "Faker", "teamId": 100,
+             "championName": "Orianna", "puuid": "aaa"},
+            {"participantId": 6, "riotIdGameName": "Zeus", "teamId": 200,
+             "championName": "Gnar", "puuid": "bbb"},
+        ]}})
+        return obs
+
+    def _kill(self, killer, victim, assistants=None, game_time=300000,
+              position=None):
+        e = {"rfc461Schema": "champion_kill", "killer": killer, "victim": victim,
+             "assistants": assistants or [], "gameTime": game_time,
+             "position": position or {"x": 5000, "z": 7000}}
+        return e
+
+    def test_solokill_recorded(self):
+        obs = SoloKillObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event(self._kill(1, 6, game_time=420000,
+                                    position={"x": 5000, "z": 7000}))
+        kills = obs.get_solokills()
+        self.assertEqual(len(kills), 1)
+        k = kills[0]
+        self.assertEqual(k["killer"], "Faker")
+        self.assertEqual(k["killer_side"], "BLUE")
+        self.assertEqual(k["victim"], "Zeus")
+        self.assertEqual(k["victim_side"], "RED")
+        self.assertEqual(k["position"], {"x": 5000, "y": 7000})
+        self.assertAlmostEqual(k["time"], 420.0)
+
+    def test_kill_with_assistants_ignored(self):
+        obs = SoloKillObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event(self._kill(1, 6, assistants=[2]))
+        self.assertEqual(len(obs.get_solokills()), 0)
+
+    def test_execution_by_tower_ignored(self):
+        obs = SoloKillObserver(teams_observer=self._make_teams_obs())
+        # killer fuera de 1-10 (ejecución por torre/minion).
+        obs.notify_event(self._kill(0, 6))
+        self.assertEqual(len(obs.get_solokills()), 0)
+
+    def test_non_kill_event_ignored(self):
+        obs = SoloKillObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event({"rfc461Schema": "stats_update"})
+        self.assertEqual(len(obs.get_solokills()), 0)
+
+    def test_reset(self):
+        obs = SoloKillObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event(self._kill(1, 6))
+        obs.reset()
+        self.assertEqual(len(obs.get_solokills()), 0)
 
 
 if __name__ == "__main__":

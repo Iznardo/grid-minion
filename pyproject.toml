@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grid-minion"
-version = "0.3.0"
+version = "0.4.0"
 description = "Cliente no oficial de Python para las APIs de GRID (League of Legends)"
 readme = "README.md"
 requires-python = ">=3.8"
