@@ -104,7 +104,8 @@ def _participant(player: Dict[str, Any], team: Dict[str, Any], index: int) -> Di
         "deaths": int(battle.get("death", 0) or 0),
         "assists": int(battle.get("assist", 0) or 0),
         "gold": int(other.get("golds", 0) or 0),
-        "cs": int(other.get("creepsKilled", player.get("minionKilled", 0)) or 0),
+        "cs": int((other.get("creepsKilled", player.get("minionKilled", 0)) or 0)
+                  + (other.get("totalNeutralMinKilled", 0) or 0)),
         "damage_dealt": int(damage.get("heroDamage", 0) or 0),
         "vision_score": int(vision.get("visionScore", 0) or 0),
         "runes": _collapse_runes(player),
