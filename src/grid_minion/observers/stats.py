@@ -125,6 +125,8 @@ class PostGameObserver(Observer):
                 # runes y final_items solo existen en el summary.
                 runes = self._collapse_runes(p.get("perks"))
                 final_items = self._final_items(p)
+                # summoner1Id/summoner2Id son IDs de Data Dragon.
+                spells = [s for s in (p.get("summoner1Id"), p.get("summoner2Id")) if s] or None
             elif source == "TENCENT_DETAILS":
                 kills = p.get("kills", 0)
                 deaths = p.get("deaths", 0)
@@ -134,6 +136,8 @@ class PostGameObserver(Observer):
                 dmg = p.get("damage_dealt", 0)
                 runes = p.get("runes")
                 final_items = p.get("final_items")
+                # Ya normalizado en sources/tencent.py (spell1Id/spell2Id).
+                spells = p.get("summoner_spells") or None
             else:
                 stats_list = p.get("stats", [])
                 stats_dict = {}
@@ -146,9 +150,10 @@ class PostGameObserver(Observer):
                 gold = p.get("totalGold", p.get("currentGold", 0))
                 cs = stats_dict.get("MINIONS_KILLED", 0) + stats_dict.get("NEUTRAL_MINIONS_KILLED", 0)
                 dmg = stats_dict.get("TOTAL_DAMAGE_DEALT_TO_CHAMPIONS", 0)
-                # Sin summary no hay runas ni build final fiables: no se inventan.
+                # Sin summary no hay runas, build final ni summoners fiables.
                 runes = None
                 final_items = None
+                spells = None
 
             self.stats[pid] = {
                 "kills": int(kills),
@@ -159,6 +164,7 @@ class PostGameObserver(Observer):
                 "damage_dealt": int(dmg),
                 "runes": runes,
                 "final_items": final_items,
+                "summoner_spells": spells,
                 "source": source
             }
 

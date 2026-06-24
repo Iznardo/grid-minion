@@ -110,6 +110,8 @@ def _participant(player: Dict[str, Any], team: Dict[str, Any], index: int) -> Di
         "vision_score": int(vision.get("visionScore", 0) or 0),
         "runes": _collapse_runes(player),
         "final_items": _final_items(player),
+        # spell1Id/spell2Id ya son IDs de Data Dragon (4=Flash, 12=TP...).
+        "summoner_spells": [s for s in (player.get("spell1Id"), player.get("spell2Id")) if s],
         "source": "TENCENT_DETAILS",
     }
 

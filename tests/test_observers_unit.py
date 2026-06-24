@@ -217,6 +217,7 @@ class TestPostGameObserver(unittest.TestCase):
                 "teams": [{"teamId": 100, "win": True}],
                 "participants": [{
                     "participantId": 1, "teamId": 100,
+                    "summoner1Id": 4, "summoner2Id": 14,
                     "item0": 3047, "item1": 3157, "item2": 0, "item3": 6653,
                     "item4": 4645, "item5": 0, "item6": 3363,
                     "perks": {
@@ -242,9 +243,11 @@ class TestPostGameObserver(unittest.TestCase):
             "sub": [8473, 8242],
             "stat_perks": [5008, 5008, 5011],
         })
+        # summoner1Id/summoner2Id -> IDs de Data Dragon
+        self.assertEqual(player["summoner_spells"], [4, 14])
 
     def test_no_runes_without_summary(self):
-        """Sin summary, runes y final_items son None (no se inventan)."""
+        """Sin summary, runes/final_items/summoners son None (no se inventan)."""
         obs = PostGameObserver()
         obs.notify_event({"rfc461Schema": "stats_update",
                           "participants": [{"participantId": 1, "stats": []}],
@@ -252,6 +255,7 @@ class TestPostGameObserver(unittest.TestCase):
         player = obs.get_game_stats()["players"][1]
         self.assertIsNone(player["runes"])
         self.assertIsNone(player["final_items"])
+        self.assertIsNone(player["summoner_spells"])
 
 
 # ---------------------------------------------------------------------------
@@ -281,6 +285,7 @@ def _lpl_player(name, role, champ, champ_id, kills=1, deaths=2, assists=3):
         "damageDetail": {"heroDamage": 12345.6},
         "otherDetail": {"golds": 12000, "creepsKilled": 250},
         "visionDetail": {"visionScore": 33},
+        "spell1Id": 4, "spell2Id": 12,
     }
 
 
@@ -343,6 +348,7 @@ class TestLPLSources(unittest.TestCase):
         self.assertEqual(report["meta"]["winner_source"], "tencent_details")
         self.assertEqual(report["players"][1]["final_items"], [1055, 3031, 3363])
         self.assertEqual(report["players"][1]["runes"]["primary"], [8008, 9111, 9103, 8017])
+        self.assertEqual(report["players"][1]["summoner_spells"], [4, 12])
 
     def test_tencent_winner_accepts_mixed_id_types(self):
         payload = _tencent_details()
