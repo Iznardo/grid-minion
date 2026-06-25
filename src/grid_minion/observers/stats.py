@@ -125,8 +125,11 @@ class PostGameObserver(Observer):
                 # runes y final_items solo existen en el summary.
                 runes = self._collapse_runes(p.get("perks"))
                 final_items = self._final_items(p)
-                # summoner1Id/summoner2Id son IDs de Data Dragon.
-                spells = [s for s in (p.get("summoner1Id"), p.get("summoner2Id")) if s] or None
+                # El summary de GRID usa spell1Id/spell2Id (estilo Match-V4) para
+                # los summoner spells; el Match-V5 directo usa summoner1Id/2Id.
+                # Leemos el primero con fallback al segundo. IDs de Data Dragon.
+                spells = [s for s in (p.get("spell1Id") or p.get("summoner1Id"),
+                                      p.get("spell2Id") or p.get("summoner2Id")) if s] or None
             elif source == "TENCENT_DETAILS":
                 kills = p.get("kills", 0)
                 deaths = p.get("deaths", 0)

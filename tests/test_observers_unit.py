@@ -217,7 +217,8 @@ class TestPostGameObserver(unittest.TestCase):
                 "teams": [{"teamId": 100, "win": True}],
                 "participants": [{
                     "participantId": 1, "teamId": 100,
-                    "summoner1Id": 4, "summoner2Id": 14,
+                    # GRID usa spell1Id/spell2Id (Match-V4), no summoner1Id/2Id.
+                    "spell1Id": 4, "spell2Id": 14,
                     "item0": 3047, "item1": 3157, "item2": 0, "item3": 6653,
                     "item4": 4645, "item5": 0, "item6": 3363,
                     "perks": {
@@ -243,8 +244,23 @@ class TestPostGameObserver(unittest.TestCase):
             "sub": [8473, 8242],
             "stat_perks": [5008, 5008, 5011],
         })
-        # summoner1Id/summoner2Id -> IDs de Data Dragon
+        # spell1Id/spell2Id -> IDs de Data Dragon
         self.assertEqual(player["summoner_spells"], [4, 14])
+
+    def test_summoner_spells_fallback_to_match_v5_naming(self):
+        """Si el summary trae summoner1Id/2Id (Match-V5), también se leen."""
+        obs = PostGameObserver()
+        obs.notify_event({
+            "source": "RIOT_SUMMARY",
+            "payload": {
+                "teams": [{"teamId": 100, "win": True}],
+                "participants": [{
+                    "participantId": 1, "teamId": 100,
+                    "summoner1Id": 4, "summoner2Id": 12,
+                }],
+            },
+        })
+        self.assertEqual(obs.get_game_stats()["players"][1]["summoner_spells"], [4, 12])
 
     def test_no_runes_without_summary(self):
         """Sin summary, runes/final_items/summoners son None (no se inventan)."""
