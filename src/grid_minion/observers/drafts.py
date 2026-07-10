@@ -10,7 +10,11 @@ class DraftObserver(Observer):
     Observador encargado de reconstruir la fase de selección y baneo (Draft).
     
     Gestiona automáticamente remakes administrativos (borradores invalidados)
-    y determina quién es el First Pick basándose en la secuencia de eventos.
+    y determina quién es el First Pick a partir del primer pick de la
+    secuencia (pick1 es siempre el blind pick de FP). Los bans previos al
+    primer pick se bufferean y se clasifican retroactivamente: el primer ban
+    observado no es fiable porque GRID puede perder los bans iniciales de un
+    equipo (ver docs/bug_draft_observer_fp_dropped_bans.md).
     """
     def __init__(self):
         # Historial global de la partida para almacenar borradores invalidados
@@ -35,6 +39,13 @@ class DraftObserver(Observer):
         self.fp_picks: List[str] = []
         self.sp_picks: List[str] = []
         self.action_history: List[Dict[str, Any]] = []
+        # Acciones (bans/undos) llegadas antes del primer pick. FP se decide
+        # con el primer 'team-picked-character' (pick1 es siempre el blind
+        # pick de FP), porque GRID a veces pierde los bans iniciales del lado
+        # azul en scrims y el primer ban observado NO es fiable. Estas
+        # acciones se clasifican retroactivamente al conocerse FP.
+        # Ver docs/bug_draft_observer_fp_dropped_bans.md.
+        self._pending_actions: List[Dict[str, Any]] = []
         # El draft queda congelado al arrancar la partida: a partir de
         # 'series-started-game' una invalidación es una reconexión de feed de
         # GRID, no un remake, y NO debe descartar el draft. Ver bug del draft
@@ -93,11 +104,27 @@ class DraftObserver(Observer):
         target = event.get("target", {}).get("state", {})
         champ_name = target.get("name", "Unknown")
         
-        if not self.first_pick_team:
+        if self.first_pick_team is None:
+            if action_type != "team-picked-character":
+                # FP aún desconocido: bufferizar y clasificar cuando llegue
+                # el primer pick. No usar el primer ban como señal de FP:
+                # GRID puede haber perdido los bans iniciales del otro equipo.
+                self._pending_actions.append({
+                    "type": action_type,
+                    "team_id": team_id,
+                    "champion": champ_name,
+                })
+                return
+            # Primer pick real: pick1 es el blind pick de FP por formato.
             self.first_pick_team = team_id
+            self._flush_pending_actions()
         elif not self.second_pick_team and team_id != self.first_pick_team:
             self.second_pick_team = team_id
 
+        self._apply_action(action_type, team_id, champ_name)
+
+    def _apply_action(self, action_type: str, team_id: str, champ_name: str):
+        """Clasifica y aplica una acción de draft con FP ya conocido."""
         is_fp = (team_id == self.first_pick_team)
         self.action_history.append({
             "type": action_type,
@@ -115,6 +142,15 @@ class DraftObserver(Observer):
             self._undo_ban(is_fp, champ_name)
         elif action_type == "team-!picked-character":
             self._undo_pick(is_fp, champ_name)
+
+    def _flush_pending_actions(self):
+        """Clasifica retroactivamente las acciones previas al primer pick."""
+        for action in self._pending_actions:
+            team_id = action["team_id"]
+            if not self.second_pick_team and team_id != self.first_pick_team:
+                self.second_pick_team = team_id
+            self._apply_action(action["type"], team_id, action["champion"])
+        self._pending_actions = []
 
     def _add_ban(self, is_fp: bool, champ_name: str):
         target = self.fp_bans if is_fp else self.sp_bans
@@ -162,19 +198,46 @@ class DraftObserver(Observer):
                 bans.append(None)
 
     def _export_current_state(self) -> Dict[str, Any]:
-        """Exporta el estado actual del borrador en formato diccionario."""
+        """Exporta el estado actual del borrador en formato diccionario.
+
+        Si el feed nunca trajo un pick (draft parcial roto), las acciones
+        pendientes se resuelven aquí con la heurística antigua (primer actor
+        observado = FP) sin mutar el estado: si luego llegara un pick, la
+        clasificación real seguiría mandando.
+        """
+        fp_team = self.first_pick_team
+        sp_team = self.second_pick_team
+        fp_bans = list(self.fp_bans)
+        sp_bans = list(self.sp_bans)
+        if self._pending_actions and fp_team is None:
+            fp_team = self._pending_actions[0]["team_id"]
+            sp_team = next(
+                (a["team_id"] for a in self._pending_actions
+                 if a["team_id"] != fp_team),
+                None,
+            )
+            for action in self._pending_actions:
+                bans = fp_bans if action["team_id"] == fp_team else sp_bans
+                if action["type"] == "team-banned-character":
+                    if len(bans) < 5:
+                        bans.append(action["champion"])
+                elif action["type"] == "team-!banned-character":
+                    if action["champion"] in bans:
+                        bans.remove(action["champion"])
+                    elif bans:
+                        bans.pop()
         return {
             "draft_found": self.draft_found,
             "is_complete": self.is_complete,
             "fp": {
-                "team_id": self.first_pick_team,
+                "team_id": fp_team,
                 "picks": list(self.fp_picks),
-                "bans": list(self.fp_bans)
+                "bans": fp_bans
             },
             "sp": {
-                "team_id": self.second_pick_team,
+                "team_id": sp_team,
                 "picks": list(self.sp_picks),
-                "bans": list(self.sp_bans)
+                "bans": sp_bans
             }
         }
 
@@ -190,7 +253,12 @@ class DraftObserver(Observer):
     def draft_found(self) -> bool:
         """True si se ha detectado al menos un baneo o pick."""
         all_bans = self.fp_bans + self.sp_bans
-        return any(ban is not None for ban in all_bans) or len(self.fp_picks) > 0
+        return (
+            any(ban is not None for ban in all_bans)
+            or len(self.fp_picks) > 0
+            or any(a["type"] == "team-banned-character"
+                   for a in self._pending_actions)
+        )
 
     @property
     def is_complete(self) -> bool:

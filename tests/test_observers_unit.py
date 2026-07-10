@@ -99,12 +99,96 @@ class TestDraftObserver(unittest.TestCase):
         self.assertIn("LeBlanc", pick_names)
 
     def test_first_pick_assignment(self):
+        """Sin picks en el feed, el fallback es el orden de llegada de bans."""
         obs = DraftObserver()
         obs.notify_event({"events": [self._ban("TEAM_A", "Orianna")]})
         obs.notify_event({"events": [self._ban("TEAM_B", "Ryze")]})
         draft = obs.get_draft()
         self.assertEqual(draft["fp"]["team_id"], "TEAM_A")
         self.assertEqual(draft["sp"]["team_id"], "TEAM_B")
+
+    def test_fp_from_first_pick_healthy_draft(self):
+        """Draft sano (bans primero): FP sigue siendo quien pickea primero."""
+        obs = DraftObserver()
+        events = (
+            [self._ban("A", c) for c in ["A1", "A2", "A3"]]
+            + [self._ban("B", c) for c in ["B1", "B2", "B3"]]
+            + [self._pick("A", "P1"), self._pick("B", "P2"), self._pick("B", "P3"),
+               self._pick("A", "P4"), self._pick("A", "P5"), self._pick("B", "P6")]
+            + [self._ban("B", "B4"), self._ban("A", "A4"),
+               self._ban("B", "B5"), self._ban("A", "A5")]
+            + [self._pick("B", "P7"), self._pick("A", "P8"),
+               self._pick("A", "P9"), self._pick("B", "P10")]
+        )
+        obs.notify_event({"events": events})
+        draft = obs.get_draft()
+        self.assertEqual(draft["fp"]["team_id"], "A")
+        self.assertEqual(draft["sp"]["team_id"], "B")
+        self.assertTrue(draft["is_complete"])
+        self.assertEqual([b["name"] for b in draft["fp"]["bans"]],
+                         ["A1", "A2", "A3", "A4", "A5"])
+        self.assertEqual([b["name"] for b in draft["sp"]["bans"]],
+                         ["B1", "B2", "B3", "B4", "B5"])
+
+    def test_fp_with_dropped_opening_bans(self):
+        """Serie GRID 2972536: el feed pierde los 3 bans iniciales del azul.
+
+        El primer evento observado es un ban del rojo, pero FP es el azul
+        (pickea primero). Ver docs/bug_draft_observer_fp_dropped_bans.md.
+        """
+        obs = DraftObserver()
+        blue, red = "CITA", "GIANTX"
+        events = [
+            # Los 3 bans de fase 1 del azul nunca llegan.
+            self._ban(red, "Orianna"),
+            self._ban(red, "Jarvan IV"),
+            self._ban(red, "Syndra"),
+            self._pick(blue, "Nocturne"),
+            self._pick(red, "Cassiopeia"),
+            self._pick(red, "Poppy"),
+            self._pick(blue, "Bard"),
+            self._pick(blue, "Ezreal"),
+            self._pick(red, "Nautilus"),
+            self._ban(red, "Anivia"),
+            self._ban(blue, "KaiSa"),
+            self._ban(red, "Viktor"),
+            self._ban(blue, "Sivir"),
+            self._pick(red, "Jhin"),
+            self._pick(blue, "Annie"),
+            self._pick(blue, "Jayce"),
+            self._pick(red, "Sion"),
+        ]
+        obs.notify_event({"events": events})
+        draft = obs.get_draft()
+        self.assertEqual(draft["fp"]["team_id"], blue)
+        self.assertEqual(draft["sp"]["team_id"], red)
+        self.assertTrue(draft["is_complete"])
+        fp_bans = [b["name"] if b else None for b in draft["fp"]["bans"]]
+        sp_bans = [b["name"] if b else None for b in draft["sp"]["bans"]]
+        self.assertEqual(fp_bans, [None, None, None, "KaiSa", "Sivir"])
+        self.assertEqual(sp_bans,
+                         ["Orianna", "Jarvan IV", "Syndra", "Anivia", "Viktor"])
+        self.assertEqual([p["name"] for p in draft["fp"]["picks"]],
+                         ["Nocturne", "Bard", "Ezreal", "Annie", "Jayce"])
+        self.assertEqual([p["name"] for p in draft["sp"]["picks"]],
+                         ["Cassiopeia", "Poppy", "Nautilus", "Jhin", "Sion"])
+
+    def test_undo_ban_before_first_pick(self):
+        """Los undos previos al primer pick también se bufferean y clasifican."""
+        obs = DraftObserver()
+        obs.notify_event({"events": [
+            self._ban("A", "Orianna"),
+            {"type": "team-!banned-character",
+             "actor": {"id": "A"},
+             "target": {"state": {"name": "Orianna"}}},
+            self._ban("A", "Syndra"),
+            self._pick("B", "LeBlanc"),
+        ]})
+        draft = obs.get_draft()
+        self.assertEqual(draft["fp"]["team_id"], "B")
+        self.assertEqual(draft["sp"]["team_id"], "A")
+        sp_bans = [b["name"] for b in draft["sp"]["bans"] if b]
+        self.assertEqual(sp_bans, ["Syndra"])
 
     def test_fill_skipped_bans(self):
         """Un equipo que pickea sin banear recibe None en sus bans."""
