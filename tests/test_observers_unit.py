@@ -245,11 +245,24 @@ class TestPostGameObserver(unittest.TestCase):
     def test_winner_gold_heuristic(self):
         obs = PostGameObserver()
         obs.notify_event({"rfc461Schema": "stats_update", "participants": [],
+                          "gameTime": 700_000,
                           "teams": [{"teamID": 100, "totalGold": 8000},
                                     {"teamID": 200, "totalGold": 5000}]})
         meta = obs.get_game_stats()["meta"]
         self.assertEqual(meta["winner"], "BLUE")
         self.assertEqual(meta["winner_source"], "gold_heuristic")
+
+    def test_gold_heuristic_below_duration_threshold(self):
+        """Por debajo del umbral (default 10 min) la señal de oro es demasiado
+        débil (p.ej. una scrim abortada casi al empezar) y no decide ganador."""
+        obs = PostGameObserver()
+        obs.notify_event({"rfc461Schema": "stats_update", "participants": [],
+                          "gameTime": 300_000,
+                          "teams": [{"teamID": 100, "totalGold": 8000},
+                                    {"teamID": 200, "totalGold": 5000}]})
+        meta = obs.get_game_stats()["meta"]
+        self.assertIsNone(meta["winner"])
+        self.assertIsNone(meta["winner_source"])
 
     def test_gold_heuristic_needs_both_teams(self):
         obs = PostGameObserver()
@@ -287,6 +300,57 @@ class TestPostGameObserver(unittest.TestCase):
         meta = obs.get_game_stats()["meta"]
         self.assertEqual(meta["winner"], "BLUE")
         self.assertEqual(meta["winner_source"], "summary")
+
+    def _aborted_summary_event(self):
+        """Scrim abortada: Riot publica summary sin ganador (win=False ambos
+        equipos) y endOfGameResult='Abort_TooFewPlayers'."""
+        return {
+            "source": "RIOT_SUMMARY",
+            "payload": {
+                "gameVersion": "14.1.500",
+                "endOfGameResult": "Abort_TooFewPlayers",
+                "teams": [{"teamId": 100, "win": False},
+                          {"teamId": 200, "win": False}],
+                "participants": []
+            }
+        }
+
+    def test_gold_heuristic_after_summary_without_winner(self):
+        """Bug 2026-07-11: un summary sin ganador (scrim abortada) no debe
+        bloquear la heurística de oro como último recurso."""
+        obs = PostGameObserver()
+        obs.notify_event(self._aborted_summary_event())
+        obs.notify_event({"rfc461Schema": "stats_update", "participants": [],
+                          "gameTime": 867_010,
+                          "teams": [{"teamID": 100, "totalGold": 28214},
+                                    {"teamID": 200, "totalGold": 23697}]})
+        meta = obs.get_game_stats()["meta"]
+        self.assertEqual(meta["winner"], "BLUE")
+        self.assertEqual(meta["winner_source"], "gold_heuristic")
+        self.assertEqual(meta["end_of_game_result"], "Abort_TooFewPlayers")
+
+    def test_gold_heuristic_after_summary_without_winner_below_threshold(self):
+        """Misma scrim abortada pero cortada demasiado pronto (<10 min): la
+        señal de oro no es fiable y se prefiere no decidir ganador."""
+        obs = PostGameObserver()
+        obs.notify_event(self._aborted_summary_event())
+        obs.notify_event({"rfc461Schema": "stats_update", "participants": [],
+                          "gameTime": 537_031,
+                          "teams": [{"teamID": 100, "totalGold": 16428},
+                                    {"teamID": 200, "totalGold": 14438}]})
+        meta = obs.get_game_stats()["meta"]
+        self.assertIsNone(meta["winner"])
+        self.assertIsNone(meta["winner_source"])
+
+    def test_game_end_after_summary_without_winner(self):
+        """Un summary sin ganador seguido de un game_end fiable sí debe
+        decidir el ganador (game_end no depende de _has_summary)."""
+        obs = PostGameObserver()
+        obs.notify_event(self._aborted_summary_event())
+        obs.notify_event({"rfc461Schema": "game_end", "winningTeam": 200})
+        meta = obs.get_game_stats()["meta"]
+        self.assertEqual(meta["winner"], "RED")
+        self.assertEqual(meta["winner_source"], "game_end")
 
     def test_game_version_from_summary(self):
         obs = PostGameObserver()

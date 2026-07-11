@@ -10,15 +10,28 @@ class PostGameObserver(Observer):
     Observador encargado de recopilar las estadísticas finales y el resultado de la partida.
     
     Procesa tanto el Summary de Riot (fuente definitiva) como los eventos
-    de LiveStats para estimar el ganador en caso de que el Summary no esté disponible.
+    de LiveStats para estimar el ganador cuando el Summary no está disponible,
+    o cuando existe pero no trae un ganador válido (p.ej. una scrim abortada,
+    donde Riot marca `win=False` para ambos equipos).
     """
-    def __init__(self):
+    def __init__(self, gold_heuristic_min_ms: int = 600_000):
+        """
+        Args:
+            gold_heuristic_min_ms: duración mínima (ms) del último stats_update
+                para aceptar la heurística de oro como ganador. Por debajo de
+                este umbral la señal es demasiado débil (partida abortada casi
+                al empezar) y se prefiere no decidir. Default 600_000 (10 min).
+        """
         self.stats: Dict[int, Dict[str, Any]] = {}
         self.winner: Optional[str] = None
         self.game_version: str = "Unknown"
+        self.end_of_game_result: Optional[str] = None
         self._has_summary = False
         self._has_tencent = False
         self._winner_source: Optional[str] = None
+        self._gold_heuristic_min_ms = gold_heuristic_min_ms
+        self._last_gold: Optional[tuple] = None
+        self._last_game_time_ms: Optional[int] = None
 
     def notify_event(self, event: Dict[str, Any]):
         """Procesa el fin de partida y los updates de estadísticas."""
@@ -44,15 +57,20 @@ class PostGameObserver(Observer):
             self._has_summary = True
             return
 
-        # 4. RIOT LIVESTATS (fallback si no hay end-state autoritativo)
-        if not self._has_summary and not self._has_tencent:
-            rfc_type = event.get("rfc461Schema")
-            event_type = event.get("eventType")
-            if rfc_type == "game_end" or event_type == "game_end":
+        # 4. RIOT LIVESTATS (fallback si no hay end-state autoritativo, o si el
+        # end-state existe pero no trae ganador — p.ej. scrim abortada, donde
+        # Riot publica summary con win=False para ambos equipos).
+        rfc_type = event.get("rfc461Schema")
+        event_type = event.get("eventType")
+        if rfc_type == "game_end" or event_type == "game_end":
+            if self.winner is None:
                 self._process_game_end(event)
-            elif rfc_type == "stats_update" or event_type == "stats_update":
+        elif rfc_type == "stats_update" or event_type == "stats_update":
+            self._track_team_gold(event)
+            if not self._has_summary and not self._has_tencent:
                 self._process_live_stats_update(event)
-            elif rfc_type == "game_info" or event_type == "game_info":
+        elif rfc_type == "game_info" or event_type == "game_info":
+            if not self._has_summary and not self._has_tencent:
                 self._process_live_game_info(event)
 
     def _process_summary(self, payload: Dict[str, Any]):
@@ -60,6 +78,7 @@ class PostGameObserver(Observer):
         raw_version = payload.get("gameVersion", "")
         if raw_version:
             self.game_version = ".".join(raw_version.split(".")[:2])
+        self.end_of_game_result = payload.get("endOfGameResult")
 
         teams = payload.get("teams", [])
         for team in teams:
@@ -87,22 +106,31 @@ class PostGameObserver(Observer):
     def _process_live_stats_update(self, event: Dict[str, Any]):
         """Actualiza estadísticas basándose en eventos del timeline."""
         self._process_participants_stats(event.get("participants", []), source="LIVESTATS")
-        # Solo usamos el oro como fallback si no tenemos un ganador más fiable
-        if self._winner_source != "game_end":
-            teams_data = event.get("teams", [])
-            blue_gold = None
-            red_gold = None
-            for t in teams_data:
-                tid = t.get("teamID") or t.get("teamId")
-                gold = t.get("totalGold", 0)
-                if str(tid) == "100":
-                    blue_gold = gold
-                elif str(tid) == "200":
-                    red_gold = gold
-            if blue_gold is None or red_gold is None or blue_gold == red_gold:
-                return
-            self.winner = "BLUE" if blue_gold > red_gold else "RED"
-            self._winner_source = "gold_heuristic"
+
+    def _track_team_gold(self, event: Dict[str, Any]):
+        """Memoriza el oro por equipo y el gameTime del último stats_update.
+
+        No decide ganador aquí: la heurística de oro es un último recurso que
+        se evalúa en `get_game_stats()`, una vez conocido todo el resto de
+        fuentes (summary/tencent/game_end) y aplicando el umbral mínimo de
+        duración (`_gold_heuristic_min_ms`).
+        """
+        teams_data = event.get("teams", [])
+        blue_gold = None
+        red_gold = None
+        for t in teams_data:
+            tid = t.get("teamID") or t.get("teamId")
+            gold = t.get("totalGold", 0)
+            if str(tid) == "100":
+                blue_gold = gold
+            elif str(tid) == "200":
+                red_gold = gold
+        if blue_gold is not None and red_gold is not None:
+            self._last_gold = (blue_gold, red_gold)
+
+        game_time = event.get("gameTime")
+        if game_time is not None:
+            self._last_game_time_ms = game_time
 
     def _process_live_game_info(self, event: Dict[str, Any]):
         raw = event.get("gameVersion")
@@ -209,6 +237,16 @@ class PostGameObserver(Observer):
         Returns:
             Dict[str, Any]: Diccionario con metadatos y estadísticas por jugador.
         """
+        # Último recurso: heurística de oro, gateada por duración mínima. Se
+        # decide aquí (no al vuelo en cada stats_update) porque un summary sin
+        # ganador (scrim abortada) puede llegar antes o después del livestats.
+        if self.winner is None and self._last_gold is not None:
+            blue_gold, red_gold = self._last_gold
+            if (blue_gold != red_gold
+                    and (self._last_game_time_ms or 0) >= self._gold_heuristic_min_ms):
+                self.winner = "BLUE" if blue_gold > red_gold else "RED"
+                self._winner_source = "gold_heuristic"
+
         result = {
             "meta": {
                 "winner": self.winner,
@@ -218,7 +256,9 @@ class PostGameObserver(Observer):
                     else "TENCENT_DETAILS" if self._has_tencent
                     else "LIVESTATS"
                 ),
-                "winner_source": self._winner_source
+                "winner_source": self._winner_source,
+                "end_of_game_result": self.end_of_game_result,
+                "game_time_last_update_ms": self._last_game_time_ms,
             },
             "players": {}
         }
