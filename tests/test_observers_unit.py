@@ -2,7 +2,9 @@ import unittest
 from grid_minion.observers import (
     GameEventProcessor, TeamsObserver, DraftObserver,
     PostGameObserver, ObjectiveKilledObserver, WardsObserver, BuildObserver,
-    MidGameStatsObserver, SoloKillObserver
+    MidGameStatsObserver, SoloKillObserver,
+    PlayerTimelineObserver, CombatObserver, WardEventsObserver,
+    BuildingObserver, ObjectiveSpawnObserver,
 )
 from grid_minion.champions import ChampionResolver, set_default_resolver
 from grid_minion.sources import normalize_grid_game_state, normalize_tencent_details
@@ -974,6 +976,346 @@ class TestSoloKillObserver(unittest.TestCase):
         obs.notify_event(self._kill(1, 6))
         obs.reset()
         self.assertEqual(len(obs.get_solokills()), 0)
+
+
+# ---------------------------------------------------------------------------
+# PlayerTimelineObserver
+# ---------------------------------------------------------------------------
+
+class TestPlayerTimelineObserver(unittest.TestCase):
+
+    def _player(self, pid, x, z, total_gold, xp, level, ult_cd,
+                minions=0, neutrals=0, ad=100.0, sums=(0.0, 0.0)):
+        return {
+            "participantID": pid, "position": {"x": x, "z": z},
+            "alive": True, "respawnTimer": 0.0,
+            "totalGold": total_gold, "currentGold": total_gold, "XP": xp, "level": level,
+            "items": [3006, 3031],
+            "attackDamage": ad, "abilityPower": 0, "armor": 50, "magicResist": 40,
+            "attackSpeed": 0.8, "health": 1000, "healthMax": 1200,
+            "ultimateCooldownRemaining": ult_cd,
+            "ability1CooldownRemaining": 0, "ability2CooldownRemaining": 3,
+            "ability3CooldownRemaining": 0, "ability4CooldownRemaining": ult_cd,
+            "summonerSpell1CooldownRemaining": sums[0],
+            "summonerSpell2CooldownRemaining": sums[1],
+            "stats": [{"name": "MINIONS_KILLED", "value": minions},
+                      {"name": "NEUTRAL_MINIONS_KILLED", "value": neutrals}],
+        }
+
+    def _su(self, game_time, participants, teams=None):
+        ev = {"rfc461Schema": "stats_update", "gameTime": game_time,
+              "participants": participants}
+        if teams is not None:
+            ev["teams"] = teams
+        return ev
+
+    def test_positions_series(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(1000, [self._player(1, 100, 200, 500, 100, 1, 0)]))
+        obs.notify_event(self._su(2000, [self._player(1, 150, 250, 600, 150, 2, 5)]))
+        pos = obs.get_positions(1)
+        self.assertEqual(len(pos), 2)
+        self.assertEqual(pos[0], {"t": 1.0, "x": 100, "y": 200})
+        self.assertEqual(pos[1]["x"], 150)
+
+    def test_economy_and_cs_with_jungle(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(420000,
+                         [self._player(2, 0, 0, 1945, 1964, 6, 0,
+                                       minions=10, neutrals=40.00000762939453)]))
+        eco = obs.get_economy(2)
+        self.assertEqual(eco[0]["gold_total"], 1945)
+        self.assertEqual(eco[0]["level"], 6)
+        self.assertEqual(eco[0]["cs"], 50)
+
+    def test_champion_stats_present(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(1000, [self._player(1, 0, 0, 500, 100, 1, 0, ad=137.5)]))
+        stats = obs.get_champion_stats(1)
+        self.assertAlmostEqual(stats[0]["ad"], 137.5)
+        self.assertEqual(stats[0]["armor"], 50.0)
+
+    def test_ultimate_availability_direct(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(60000, [self._player(1, 0, 0, 500, 100, 6, 45)]))
+        obs.notify_event(self._su(120000, [self._player(1, 0, 0, 600, 200, 6, 0)]))
+        # A los 60s la ult está en cooldown; a los 120s disponible.
+        self.assertFalse(obs.is_ultimate_up(1, 60))
+        self.assertTrue(obs.is_ultimate_up(1, 120))
+        # Antes del primer snapshot: sin dato.
+        self.assertIsNone(obs.is_ultimate_up(1, 10))
+
+    def test_summoner_availability(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(60000, [self._player(1, 0, 0, 500, 100, 3, 0,
+                                                        sums=(0.0, 120.0))]))
+        self.assertTrue(obs.is_summoner_up(1, 1, 60))
+        self.assertFalse(obs.is_summoner_up(1, 2, 60))
+
+    def test_snapshot_at_takes_last_before(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(60000, [self._player(1, 0, 0, 500, 100, 3, 0)]))
+        obs.notify_event(self._su(120000, [self._player(1, 0, 0, 900, 300, 5, 0)]))
+        snap = obs.snapshot_at(1, 90)
+        self.assertEqual(snap["gold_total"], 500)  # el de 60s, no el de 120s
+        self.assertIsNone(obs.snapshot_at(1, 10))
+
+    def test_team_gold_series(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(60000, [self._player(1, 0, 0, 500, 100, 3, 0)],
+                                  teams=[{"teamID": 100, "totalGold": 5000},
+                                         {"teamID": 200, "totalGold": 4800}]))
+        series = obs.get_team_gold_series()
+        self.assertEqual(series[100][0]["gold"], 5000)
+        self.assertEqual(series[200][0]["gold"], 4800)
+
+    def test_non_stats_update_ignored(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event({"rfc461Schema": "champion_kill"})
+        self.assertEqual(obs.get_players(), [])
+
+    def test_reset(self):
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(1000, [self._player(1, 0, 0, 500, 100, 1, 0)]))
+        obs.reset()
+        self.assertEqual(obs.get_players(), [])
+
+
+# ---------------------------------------------------------------------------
+# CombatObserver
+# ---------------------------------------------------------------------------
+
+class TestCombatObserver(unittest.TestCase):
+
+    def _make_teams_obs(self):
+        obs = TeamsObserver()
+        obs.notify_event({"source": "RIOT_SUMMARY", "payload": {"participants": [
+            {"participantId": 1, "riotIdGameName": "Faker", "teamId": 100,
+             "championName": "Orianna", "puuid": "a"},
+            {"participantId": 6, "riotIdGameName": "Chovy", "teamId": 200,
+             "championName": "Azir", "puuid": "b"},
+            {"participantId": 2, "riotIdGameName": "Oner", "teamId": 100,
+             "championName": "LeeSin", "puuid": "c"},
+        ]}})
+        return obs
+
+    def _kill(self, killer, victim, assistants, gt=300000):
+        return {"rfc461Schema": "champion_kill", "killer": killer, "victim": victim,
+                "assistants": assistants, "killerTeamID": 100, "victimTeamID": 200,
+                "position": {"x": 5000, "z": 6000}, "gameTime": gt,
+                "fightDuration": 3.2, "killStreakLength": 1, "shutdownBounty": 0,
+                "bounty": 300,
+                "deathRecap": [{"source": "Q", "casterId": 1, "breakdown": [{"a": 1}]}]}
+
+    def test_kill_recorded_with_context(self):
+        obs = CombatObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event(self._kill(1, 6, [2]))
+        kills = obs.get_kills()
+        self.assertEqual(len(kills), 1)
+        k = kills[0]
+        self.assertEqual(k["killer"], "Faker")
+        self.assertEqual(k["killer_side"], "BLUE")
+        self.assertEqual(k["victim"], "Chovy")
+        self.assertEqual(k["victim_side"], "RED")
+        self.assertEqual(k["assistants"][0]["name"], "Oner")
+        self.assertEqual(k["position"], {"x": 5000, "y": 6000})
+        self.assertEqual(k["damage_breakdown"][0]["source"], "Q")
+
+    def test_special_event(self):
+        obs = CombatObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event({"rfc461Schema": "champion_kill_special",
+                          "killType": "firstBlood", "killer": 1,
+                          "position": {"x": 1, "z": 2}, "gameTime": 90000})
+        specials = obs.get_special_events()
+        self.assertEqual(specials[0]["type"], "firstBlood")
+        self.assertEqual(specials[0]["killer"], "Faker")
+
+    def test_kda_timeline_accumulates(self):
+        obs = CombatObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event(self._kill(1, 6, [2], gt=100000))
+        obs.notify_event(self._kill(1, 6, [], gt=200000))
+        tl = obs.get_kda_timeline()
+        self.assertEqual(tl[1][-1]["kills"], 2)     # Faker: 2 kills
+        self.assertEqual(tl[6][-1]["deaths"], 2)    # Chovy: 2 deaths
+        self.assertEqual(tl[2][-1]["assists"], 1)   # Oner: 1 assist
+
+    def test_reset(self):
+        obs = CombatObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event(self._kill(1, 6, []))
+        obs.reset()
+        self.assertEqual(len(obs.get_kills()), 0)
+
+
+# ---------------------------------------------------------------------------
+# WardEventsObserver
+# ---------------------------------------------------------------------------
+
+class TestWardEventsObserver(unittest.TestCase):
+
+    def _make_teams_obs(self):
+        obs = TeamsObserver()
+        obs.notify_event({"source": "RIOT_SUMMARY", "payload": {"participants": [
+            {"participantId": 1, "riotIdGameName": "Faker", "teamId": 100,
+             "championName": "Orianna", "puuid": "a"},
+            {"participantId": 6, "riotIdGameName": "Chovy", "teamId": 200,
+             "championName": "Azir", "puuid": "b"},
+        ]}})
+        return obs
+
+    def test_placed_and_killed(self):
+        obs = WardEventsObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event({"rfc461Schema": "ward_placed", "placer": 1,
+                          "wardType": "control", "position": {"x": 10, "z": 20},
+                          "gameTime": 30000})
+        obs.notify_event({"rfc461Schema": "ward_killed", "killer": 6,
+                          "wardType": "control", "position": {"x": 10, "z": 20},
+                          "gameTime": 60000})
+        placements = obs.get_placements()
+        kills = obs.get_kills()
+        self.assertEqual(placements[0]["player"], "Faker")
+        self.assertEqual(placements[0]["team"], "BLUE")
+        self.assertEqual(placements[0]["type"], "control")
+        self.assertEqual(placements[0]["position"], {"x": 10, "y": 20})
+        self.assertEqual(kills[0]["killer"], "Chovy")
+        self.assertEqual(kills[0]["team"], "RED")
+
+    def test_get_events_merged_sorted(self):
+        obs = WardEventsObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event({"rfc461Schema": "ward_killed", "killer": 6,
+                          "wardType": "sight", "position": {"x": 0, "z": 0},
+                          "gameTime": 60000})
+        obs.notify_event({"rfc461Schema": "ward_placed", "placer": 1,
+                          "wardType": "sight", "position": {"x": 0, "z": 0},
+                          "gameTime": 30000})
+        events = obs.get_events()
+        self.assertEqual([e["action"] for e in events], ["placed", "killed"])
+
+    def test_reset(self):
+        obs = WardEventsObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event({"rfc461Schema": "ward_placed", "placer": 1,
+                          "wardType": "sight", "position": {"x": 0, "z": 0},
+                          "gameTime": 1000})
+        obs.reset()
+        self.assertEqual(len(obs.get_placements()), 0)
+
+
+# ---------------------------------------------------------------------------
+# BuildingObserver
+# ---------------------------------------------------------------------------
+
+class TestBuildingObserver(unittest.TestCase):
+
+    def test_turret_destroyed(self):
+        obs = BuildingObserver()
+        obs.notify_event({"rfc461Schema": "building_destroyed",
+                          "buildingType": "turret", "lane": "top",
+                          "turretTier": "outer", "teamID": 200, "lastHitter": 1,
+                          "assistants": [2, 3], "bountyGold": 250,
+                          "position": {"x": 100, "z": 200}, "gameTime": 600000})
+        turrets = obs.get_turrets()
+        self.assertEqual(len(turrets), 1)
+        t = turrets[0]
+        self.assertEqual(t["lane"], "top")
+        self.assertEqual(t["turret_tier"], "outer")
+        self.assertEqual(t["owner_team"], "RED")
+        self.assertEqual(t["killed_by_team"], "BLUE")
+        self.assertEqual(t["assistants"], [2, 3])
+
+    def test_inhibitor_and_plate(self):
+        obs = BuildingObserver()
+        obs.notify_event({"rfc461Schema": "building_destroyed",
+                          "buildingType": "inhibitor", "lane": "mid",
+                          "teamID": 100, "gameTime": 1500000})
+        obs.notify_event({"rfc461Schema": "turret_plate_destroyed", "lane": "bot",
+                          "teamID": 200, "lastHitter": 6, "gameTime": 500000})
+        self.assertEqual(len(obs.get_inhibitors()), 1)
+        self.assertEqual(len(obs.get_turrets()), 0)
+        self.assertEqual(obs.get_plates()[0]["lane"], "bot")
+
+    def test_reset(self):
+        obs = BuildingObserver()
+        obs.notify_event({"rfc461Schema": "building_destroyed",
+                          "buildingType": "turret", "teamID": 200, "gameTime": 1000})
+        obs.reset()
+        self.assertEqual(len(obs.get_buildings()), 0)
+
+
+# ---------------------------------------------------------------------------
+# ObjectiveSpawnObserver
+# ---------------------------------------------------------------------------
+
+class TestObjectiveSpawnObserver(unittest.TestCase):
+
+    def _dragon_spawn(self, dtype, gt):
+        return {"rfc461Schema": "epic_monster_spawn", "monsterType": "dragon",
+                "dragonType": dtype, "gameTime": gt}
+
+    def test_rift_type_from_third_dragon(self):
+        obs = ObjectiveSpawnObserver()
+        obs.notify_event(self._dragon_spawn("fire", 300000))
+        obs.notify_event(self._dragon_spawn("air", 600000))
+        # Aún no hay 3 dragones: grieta indefinida.
+        self.assertIsNone(obs.get_rift_type())
+        obs.notify_event(self._dragon_spawn("earth", 900000))
+        rift = obs.get_rift_type()
+        self.assertEqual(rift["type"], "earth")
+        self.assertAlmostEqual(rift["time"], 900.0)
+
+    def test_rift_type_excludes_elder(self):
+        obs = ObjectiveSpawnObserver()
+        obs.notify_event(self._dragon_spawn("fire", 300000))
+        obs.notify_event(self._dragon_spawn("air", 600000))
+        obs.notify_event(self._dragon_spawn("elder", 2000000))
+        # Elder no cuenta como 3.er dragón elemental.
+        self.assertIsNone(obs.get_rift_type())
+
+    def test_nashor_type_from_baron_spawn(self):
+        obs = ObjectiveSpawnObserver()
+        # Feed real: el barón solo se expone como "Baron" (sin variante).
+        obs.notify_event({"rfc461Schema": "neutral_minion_spawn",
+                          "monsterType": "Baron", "teamSide": 0,
+                          "position": {"x": 1, "z": 2}, "gameTime": 1200000})
+        nashor = obs.get_nashor_type()
+        self.assertEqual(nashor["type"], "Baron")
+        self.assertAlmostEqual(nashor["time"], 1200.0)  # spawn real, no el placeholder
+
+    def test_nashor_prefers_queued_name_and_real_spawn_time(self):
+        obs = ObjectiveSpawnObserver()
+        # spawnTime en SEGUNDOS (1200 = 20:00). El placeholder de pre-partida no debe
+        # fijar el instante: se usa el primer spawn real del barón.
+        obs.notify_event({"rfc461Schema": "queued_epic_monster_info",
+                          "monsterName": "SRU_Baron_Territorial", "spawnTime": 1200,
+                          "position": {"x": 1, "z": 2}, "gameTime": 0})
+        obs.notify_event({"rfc461Schema": "neutral_minion_spawn",
+                          "monsterType": "Baron", "gameTime": 1180000})
+        nashor = obs.get_nashor_type()
+        self.assertEqual(nashor["type"], "SRU_Baron_Territorial")   # nombre específico
+        self.assertAlmostEqual(nashor["time"], 1180.0)              # spawn real, no 1.2
+
+    def test_queued_dragon(self):
+        obs = ObjectiveSpawnObserver()
+        # Feed real: gameTime en ms (60000=1:00) pero nextDragonSpawnTime en SEGUNDOS.
+        obs.notify_event({"rfc461Schema": "queued_dragon_info",
+                          "nextDragonName": "fire", "nextDragonSpawnTime": 300,
+                          "gameTime": 60000})
+        q = obs.get_queued_dragon()
+        self.assertEqual(q["next_dragon_name"], "fire")
+        self.assertAlmostEqual(q["next_spawn_time"], 300.0)  # 5:00, no 300000/1000
+
+    def test_kills_recorded(self):
+        obs = ObjectiveSpawnObserver()
+        obs.notify_event({"rfc461Schema": "epic_monster_kill", "monsterType": "dragon",
+                          "dragonType": "fire", "killType": "steal", "killer": 6,
+                          "killerTeamID": 200, "gameTime": 350000})
+        k = obs.get_kills()[0]
+        self.assertEqual(k["kill_type"], "steal")
+        self.assertEqual(k["team"], "RED")
+
+    def test_reset(self):
+        obs = ObjectiveSpawnObserver()
+        obs.notify_event(self._dragon_spawn("fire", 300000))
+        obs.reset()
+        self.assertEqual(len(obs.get_dragon_spawns()), 0)
 
 
 if __name__ == "__main__":

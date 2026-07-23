@@ -24,6 +24,11 @@ Cliente de Python no oficial para las APIs de [GRID.gg](https://grid.gg/), enfoc
   - [BuildObserver](#buildobserver)
   - [MidGameStatsObserver](#midgamestatsobserver)
   - [SoloKillObserver](#solokillobserver)
+  - [PlayerTimelineObserver](#playertimelineobserver)
+  - [CombatObserver](#combatobserver)
+  - [WardEventsObserver](#wardeventsobserver)
+  - [BuildingObserver](#buildingobserver)
+  - [ObjectiveSpawnObserver](#objectivespawnobserver)
 - [GameEventProcessor](#gameeventprocessor)
 - [Utilidades](#utilidades)
 - [Manejo de errores](#manejo-de-errores)
@@ -234,6 +239,12 @@ Ambos clientes gestionan automáticamente:
 ## Observers
 
 Todos los observers heredan de la clase abstracta `Observer` y exponen un método `notify_event(event)`. El consumidor accede al estado a través de getters específicos por observer.
+
+> Para la **capa de timeline granular** (`PlayerTimelineObserver`, `CombatObserver`,
+> `WardEventsObserver`, `BuildingObserver`, `ObjectiveSpawnObserver`) hay una **guía de uso
+> completa** en [`TIMELINE_OBSERVERS.md`](TIMELINE_OBSERVERS.md), con el patrón de "una
+> descarga, muchos observers", tablas de campos y gotchas del feed. Ejemplo runnable en
+> [`examples/process_timeline.py`](examples/process_timeline.py).
 
 ### `TeamsObserver`
 
@@ -455,6 +466,141 @@ Un `champion_kill` cuenta como solokill solo si `assistants` está vacío y tant
 killer como víctima son jugadores (1-10); las ejecuciones por torre/minion se
 descartan.
 
+### `PlayerTimelineObserver`
+
+Reconstruye el **estado continuo por jugador a máxima frecuencia** desde el evento
+`stats_update` de Riot LiveStats: posición, oro, nivel, XP, CS, items, **stats de
+campeón ya computadas** (con items y niveles) y **cooldowns** de ultimate,
+habilidades y summoners. Todo sale del mismo evento, así que un único observer lo
+lee una vez y los getters proyectan vistas sin duplicar memoria. Sin dependencias.
+
+```python
+from grid_minion.observers import PlayerTimelineObserver
+
+tl = PlayerTimelineObserver()
+# ... tras process_bundle (necesita riot_livestats) ...
+
+tl.get_positions(1)            # [{'t': 12.0, 'x': 1200, 'y': 3400}, ...] (máx frecuencia)
+tl.get_economy(1)             # [{'t', 'gold_total', 'gold_current', 'xp', 'level', 'cs', 'items'}]
+tl.get_champion_stats(1)      # [{'t', 'ad', 'ap', 'armor', 'mr', 'attack_speed', 'hp_max', ...}]
+tl.get_ability_availability(1)# [{'t', 'ultimate', 'abilities': {1,2,3,4}, 'summoner1', 'summoner2'}]
+
+# Consulta puntual: último snapshot con t <= 600s
+snap = tl.snapshot_at(1, 600)
+
+# Disponibilidad DIRECTA (cooldownRemaining == 0), sin estimación
+tl.is_ultimate_up(1, 600)     # True / False / None (sin dato)
+tl.is_summoner_up(1, slot=1, t_s=600)
+
+tl.get_team_gold_series()     # {100: [{'t','gold'}], 200: [...]}
+```
+
+Las stats de combate vienen **ya sumadas** con items y niveles (útil para power
+spikes); no se calcula nada. La disponibilidad de ultimate/summoners es señal
+directa del feed. `snapshot_at` usa la misma semántica que `MidGameStatsObserver`
+(último tick con `t <= t_s`).
+
+### `CombatObserver`
+
+Timeline de combate completa desde `champion_kill` y `champion_kill_special`.
+Registra cada muerte con su contexto (asistentes, posición, duración de la pelea,
+botín, racha y **desglose de daño** desde `deathRecap`) y marca los eventos
+especiales (firstBlood, ace, multikill). Depende de `TeamsObserver`.
+
+```python
+from grid_minion.observers import CombatObserver
+
+combat = CombatObserver(teams_observer=teams)  # inyección obligatoria
+# ... tras process_bundle (necesita riot_livestats) ...
+
+for k in combat.get_kills():
+    print(f"[{k['time']:.0f}s] {k['killer']} ({k['killer_side']}) -> {k['victim']}")
+    # k = {'time', 'killer', 'killer_id', 'killer_side', 'victim', 'victim_id',
+    #      'victim_side', 'assistants': [{'id','name','side'}], 'position': {'x','y'},
+    #      'fight_duration', 'killstreak', 'shutdown_bounty', 'bounty',
+    #      'damage_breakdown': [{'source', 'caster_id', 'breakdown'}]}
+
+combat.get_special_events()   # [{'time', 'type': 'firstBlood'|'ace'|'multi', 'killer', ...}]
+combat.get_kda_timeline()     # {pid: [{'time', 'kills', 'deaths', 'assists'}]} acumulado
+```
+
+### `WardEventsObserver`
+
+Ciclo de vida de la visión: **colocación** (`ward_placed`) y **destrucción**
+(`ward_killed`) de centinelas, con jugador, lado, tipo y posición. Es un observer
+nuevo e independiente del `WardsObserver` (que solo registra colocación); depende
+de `TeamsObserver`.
+
+```python
+from grid_minion.observers import WardEventsObserver
+
+wards = WardEventsObserver(teams_observer=teams)  # inyección obligatoria
+# ... tras process_bundle (necesita riot_livestats) ...
+
+wards.get_placements()   # [{'time','player','player_id','team','type','position'}]
+wards.get_kills()        # [{'time','killer','killer_id','team','type','position'}]
+wards.get_events()       # colocaciones + destrucciones fusionadas y ordenadas por tiempo
+# type ∈ {sight, control, blueTrinket, yellowTrinket, unknown}
+```
+
+### `BuildingObserver`
+
+Registra **estructuras destruidas** (`building_destroyed`: torres, inhibidores,
+nexo), **placas de torreta** (`turret_plate_destroyed`) y reapariciones de
+inhibidor (`building_respawned`). `teamID` en el feed es el equipo **dueño** de la
+estructura; se expone también `killed_by_team` (el contrario). `TeamsObserver` es
+opcional (para resolver el `last_hitter`).
+
+```python
+from grid_minion.observers import BuildingObserver
+
+builds = BuildingObserver(teams_observer=teams)  # teams_observer opcional
+# ... tras process_bundle (necesita riot_livestats) ...
+
+for t in builds.get_turrets():
+    print(f"[{t['time']:.0f}s] {t['killed_by_team']} derriba {t['lane']} {t['turret_tier']}")
+    # t = {'time','building_type','lane','turret_tier','owner_team','killed_by_team',
+    #      'last_hitter','last_hitter_id','assistants','bounty_gold','position'}
+
+builds.get_inhibitors()   # inhibidores destruidos
+builds.get_plates()       # placas de torreta
+builds.get_respawns()     # reapariciones de inhibidor
+# lane ∈ {top, mid, bot}; turret_tier ∈ {outer, inner, base, nexus}
+```
+
+### `ObjectiveSpawnObserver`
+
+Rastrea la **aparición** (spawn) de objetivos para derivar el **tipo de grieta
+elemental** y el **tipo de Nashor** sin depender de los kills. Sin dependencias.
+
+```python
+from grid_minion.observers import ObjectiveSpawnObserver
+
+objs = ObjectiveSpawnObserver()
+# ... tras process_bundle (necesita riot_livestats) ...
+
+objs.get_rift_type()      # {'type': 'earth', 'time': 900.0}  → 3.er dragón elemental
+objs.get_nashor_type()    # {'type': 'Baron', 'time': 1200.0}
+objs.get_dragon_spawns()  # [{'time', 'dragon_type'}, ...] en orden de aparición
+objs.get_queued_dragon()  # {'time', 'next_dragon_name', 'next_spawn_time'}
+objs.get_baron_spawns()   # apariciones del barón
+objs.get_herald_spawns()  # apariciones del heraldo
+objs.get_kills()          # [{'time','monster_type','dragon_type','kill_type','killer_id','team'}]
+```
+
+**Regla del tipo de grieta:** es el elemento (`dragon_type`) del **3.er dragón
+elemental que spawnea** (los `elder` se excluyen). Devuelve `None` hasta que hay 3
+dragones. **Tipo de Nashor:** en el parche actual el feed expone el barón **siempre
+como `"Baron"`, sin variantes** (los dragones sí llevan elemento; el barón no), así
+que `get_nashor_type()` devuelve `{"type": "Baron", "time": <primer spawn real>}`. El
+getter queda preparado para exponer variantes vía `monsterName` si un parche futuro las
+añade. No sustituye al `ObjectiveKilledObserver` (kills): se solapan a propósito, uno
+mira spawns y el otro muertes.
+
+> Nota sobre unidades del feed: en estos eventos `gameTime` viene en **ms**, pero
+> `spawnTime`/`nextDragonSpawnTime` vienen en **segundos**. El observer ya lo normaliza
+> (todos los tiempos de salida están en segundos).
+
 ---
 
 ## GameEventProcessor
@@ -517,6 +663,11 @@ processor.attach(objectives_obs)   # sin dependencias
 processor.attach(wards_obs)        # depende de TeamsObserver (inyectado en __init__)
 processor.attach(midgame_obs)      # sin dependencias (recibe TeamsObserver en el getter)
 processor.attach(solokill_obs)     # depende de TeamsObserver (inyectado en __init__)
+processor.attach(timeline_obs)     # sin dependencias (PlayerTimelineObserver)
+processor.attach(combat_obs)       # depende de TeamsObserver (inyectado en __init__)
+processor.attach(ward_events_obs)  # depende de TeamsObserver (inyectado en __init__)
+processor.attach(buildings_obs)    # TeamsObserver opcional (inyectado en __init__)
+processor.attach(spawns_obs)       # sin dependencias (ObjectiveSpawnObserver)
 ```
 
 ### Procesar un bundle completo
@@ -673,7 +824,14 @@ src/grid_minion/
     ├── drafts.py            # DraftObserver
     ├── stats.py             # PostGameObserver
     ├── objectives.py        # ObjectiveKilledObserver
-    └── vision.py            # WardsObserver
+    ├── vision.py            # WardsObserver
+    ├── timeline_stats.py    # MidGameStatsObserver
+    ├── solokills.py         # SoloKillObserver
+    ├── player_timeline.py   # PlayerTimelineObserver
+    ├── combat.py            # CombatObserver
+    ├── ward_events.py       # WardEventsObserver
+    ├── buildings.py         # BuildingObserver
+    └── objective_spawns.py  # ObjectiveSpawnObserver
 
 tests/
 ├── samples/                 # JSON/JSONL de ejemplo para integración
