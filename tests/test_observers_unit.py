@@ -4,7 +4,7 @@ from grid_minion.observers import (
     PostGameObserver, ObjectiveKilledObserver, WardsObserver, BuildObserver,
     MidGameStatsObserver, SoloKillObserver,
     PlayerTimelineObserver, CombatObserver, WardEventsObserver,
-    BuildingObserver, ObjectiveSpawnObserver,
+    BuildingObserver, ObjectiveSpawnObserver, MobilityObserver,
 )
 from grid_minion.champions import ChampionResolver, set_default_resolver
 from grid_minion.sources import normalize_grid_game_state, normalize_tencent_details
@@ -1316,6 +1316,120 @@ class TestObjectiveSpawnObserver(unittest.TestCase):
         obs.notify_event(self._dragon_spawn("fire", 300000))
         obs.reset()
         self.assertEqual(len(obs.get_dragon_spawns()), 0)
+
+
+# ---------------------------------------------------------------------------
+# MobilityObserver
+# ---------------------------------------------------------------------------
+
+class TestMobilityObserver(unittest.TestCase):
+
+    def _make_teams_obs(self):
+        obs = TeamsObserver()
+        obs.notify_event({"source": "RIOT_SUMMARY", "payload": {"participants": [
+            {"participantId": 1, "riotIdGameName": "Faker", "teamId": 100,
+             "championName": "Orianna", "puuid": "a"},
+            {"participantId": 6, "riotIdGameName": "Chovy", "teamId": 200,
+             "championName": "Azir", "puuid": "b"},
+        ]}})
+        return obs
+
+    def test_summoner_spell_used(self):
+        obs = MobilityObserver(teams_observer=self._make_teams_obs())
+        obs.notify_event({"rfc461Schema": "summoner_spell_used", "participantID": 1,
+                          "summonerSpellName": "SummonerFlash", "summonerSpellSlot": 2,
+                          "maxCooldown": 300000, "chargesRemaining": 0, "maxCharges": 1,
+                          "gameTime": 78533})
+        use = obs.get_summoner_spell_uses()[0]
+        self.assertEqual(use["spell_name"], "SummonerFlash")
+        self.assertEqual(use["spell_slot"], 2)
+        self.assertEqual(use["player"], "Faker")
+        self.assertEqual(use["team"], "BLUE")
+        # gameTime en ms -> time en segundos; el cooldown se deja crudo en ms.
+        self.assertAlmostEqual(use["time"], 78.533)
+        self.assertEqual(use["max_cooldown_ms"], 300000)
+
+    def test_skill_used_uses_participant_key(self):
+        """El id de jugador llega como `participant` (no `participantID`) en skills."""
+        obs = MobilityObserver()
+        obs.notify_event({"rfc461Schema": "skill_used", "participant": 6,
+                          "skillSlot": 3, "maxCooldown": 5555, "gameTime": 10537})
+        skill = obs.get_skill_uses()[0]
+        self.assertEqual(skill["player_id"], 6)
+        self.assertEqual(skill["skill_slot"], 3)
+
+    def test_channeling_start_and_end_not_paired(self):
+        """Se exponen crudos, sin emparejar: emparejar es derivacion del consumidor."""
+        obs = MobilityObserver()
+        obs.notify_event({"rfc461Schema": "channeling_started", "participantID": 1,
+                          "channelingType": "recall", "gameTime": 106682})
+        obs.notify_event({"rfc461Schema": "channeling_ended", "participantID": 1,
+                          "channelingType": "recall", "isInterrupted": True,
+                          "gameTime": 114696})
+        self.assertEqual(len(obs.get_channeling_starts()), 1)
+        end = obs.get_channeling_ends()[0]
+        self.assertEqual(end["channeling_type"], "recall")
+        self.assertTrue(end["interrupted"])
+        # El `started` no inventa la clave que solo trae el `ended`.
+        self.assertNotIn("interrupted", obs.get_channeling_starts()[0])
+
+    def test_item_active_ability(self):
+        obs = MobilityObserver()
+        obs.notify_event({"rfc461Schema": "item_active_ability_used", "participantID": 4,
+                          "itemID": 3340, "inventorySlot": 7, "maxCooldown": 210000,
+                          "gameTime": 28101})
+        item = obs.get_item_actives()[0]
+        self.assertEqual(item["item_id"], 3340)
+        self.assertEqual(item["inventory_slot"], 7)
+
+    def test_works_without_teams_observer(self):
+        obs = MobilityObserver()
+        obs.notify_event({"rfc461Schema": "summoner_spell_used", "participantID": 1,
+                          "summonerSpellName": "SummonerTeleport", "gameTime": 1000})
+        use = obs.get_summoner_spell_uses()[0]
+        self.assertEqual(use["player_id"], 1)
+        self.assertIsNone(use["player"])
+        self.assertIsNone(use["team"])
+
+    def test_filter_by_player(self):
+        obs = MobilityObserver()
+        for pid, t in ((1, 1000), (6, 2000), (1, 3000)):
+            obs.notify_event({"rfc461Schema": "summoner_spell_used", "participantID": pid,
+                              "summonerSpellName": "SummonerFlash", "gameTime": t})
+        self.assertEqual(len(obs.get_summoner_spell_uses(pid=1)), 2)
+        self.assertEqual(len(obs.get_summoner_spell_uses()), 3)
+
+    def test_get_events_merged_sorted_with_kind(self):
+        obs = MobilityObserver()
+        obs.notify_event({"rfc461Schema": "skill_used", "participant": 1,
+                          "skillSlot": 1, "gameTime": 5000})
+        obs.notify_event({"rfc461Schema": "summoner_spell_used", "participantID": 1,
+                          "summonerSpellName": "SummonerFlash", "gameTime": 1000})
+        obs.notify_event({"rfc461Schema": "channeling_started", "participantID": 1,
+                          "channelingType": "recall", "gameTime": 3000})
+        events = obs.get_events()
+        self.assertEqual([e["kind"] for e in events],
+                         ["summoner_spell", "channeling_started", "skill"])
+
+    def test_ignores_unrelated_schema(self):
+        obs = MobilityObserver()
+        obs.notify_event({"rfc461Schema": "ward_placed", "placer": 1, "gameTime": 1000})
+        self.assertEqual(len(obs.get_events()), 0)
+
+    def test_malformed_participant_id_does_not_raise(self):
+        """Un id no convertible no tumba la ingesta: queda a None."""
+        obs = MobilityObserver()
+        obs.notify_event({"rfc461Schema": "summoner_spell_used", "participantID": "no-int",
+                          "summonerSpellName": "SummonerFlash", "gameTime": 1000})
+        self.assertIsNone(obs.get_summoner_spell_uses()[0]["player_id"])
+
+    def test_reset(self):
+        obs = MobilityObserver()
+        obs.notify_event({"rfc461Schema": "summoner_spell_used", "participantID": 1,
+                          "summonerSpellName": "SummonerFlash", "gameTime": 1000})
+        obs.reset()
+        self.assertEqual(len(obs.get_summoner_spell_uses()), 0)
+        self.assertEqual(len(obs.get_events()), 0)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from .combat import CombatObserver
 from .ward_events import WardEventsObserver
 from .buildings import BuildingObserver
 from .objective_spawns import ObjectiveSpawnObserver
+from .mobility import MobilityObserver
 
 __all__ = [
     "Observer",
@@ -31,4 +32,5 @@ __all__ = [
     "WardEventsObserver",
     "BuildingObserver",
     "ObjectiveSpawnObserver",
+    "MobilityObserver",
 ]
