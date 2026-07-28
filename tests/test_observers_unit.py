@@ -1080,6 +1080,41 @@ class TestPlayerTimelineObserver(unittest.TestCase):
         obs.reset()
         self.assertEqual(obs.get_players(), [])
 
+    def test_combat_totals_present(self):
+        obs = PlayerTimelineObserver()
+        p = self._player(1, 0, 0, 500, 100, 1, 0)
+        p["stats"] += [
+            {"name": "TOTAL_DAMAGE_DEALT_TO_CHAMPIONS", "value": 1234},
+            {"name": "TOTAL_DAMAGE_TAKEN_FROM_CHAMPIONS", "value": 567},
+            {"name": "CHAMPIONS_KILLED", "value": 2},
+            {"name": "VISION_SCORE", "value": 12.5},
+        ]
+        obs.notify_event(self._su(1000, [p]))
+        totals = obs.get_combat_totals(1)
+        self.assertEqual(totals[0]["damage_to_champions"], 1234)
+        self.assertEqual(totals[0]["damage_taken_from_champions"], 567)
+        self.assertEqual(totals[0]["champions_killed"], 2)
+        self.assertAlmostEqual(totals[0]["vision_score"], 12.5)
+
+    def test_combat_totals_missing_stat_is_none_not_zero(self):
+        # _player() solo mete MINIONS_KILLED/NEUTRAL_MINIONS_KILLED en `stats`:
+        # el resto de contadores de combate no aparece en este evento.
+        obs = PlayerTimelineObserver()
+        obs.notify_event(self._su(1000, [self._player(1, 0, 0, 500, 100, 1, 0)]))
+        totals = obs.get_combat_totals(1)
+        self.assertIsNone(totals[0]["damage_to_champions"])
+        self.assertIsNone(totals[0]["vision_score"])
+
+    def test_combat_totals_no_stats_list(self):
+        # Evento sin lista `stats` en absoluto -> todo None, sin excepción.
+        obs = PlayerTimelineObserver()
+        p = self._player(1, 0, 0, 500, 100, 1, 0)
+        del p["stats"]
+        obs.notify_event(self._su(1000, [p]))
+        totals = obs.get_combat_totals(1)
+        self.assertIsNone(totals[0]["damage_to_champions"])
+        self.assertIsNone(totals[0]["champions_killed"])
+
 
 # ---------------------------------------------------------------------------
 # CombatObserver

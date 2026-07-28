@@ -33,6 +33,19 @@ class PlayerTimelineObserver(Observer):
       - disponibilidad **directa**: `ultimateCooldownRemaining`,
         `ability{1..4}CooldownRemaining`, `summonerSpell{1,2}CooldownRemaining`
         (`== 0` ⇒ disponible). No se estima nada.
+      - **contadores de combate ACUMULADOS** (lista `stats`, igual que el CS):
+        daño a campeones (`TOTAL_DAMAGE_DEALT_TO_CHAMPIONS` + desglose
+        magic/physical/true), daño recibido (`TOTAL_DAMAGE_TAKEN`,
+        `TOTAL_DAMAGE_TAKEN_FROM_CHAMPIONS`), mitigación/escudo/curación
+        (`TOTAL_DAMAGE_SELF_MITIGATED`, `TOTAL_DAMAGE_SHIELDED_ON_TEAMMATES`,
+        `TOTAL_HEAL_ON_TEAMMATES`), CC infligido (`TIME_CCING_OTHERS`,
+        `TOTAL_TIME_CROWD_CONTROL_DEALT_TO_CHAMPIONS`) y kills/assists/visión
+        (`CHAMPIONS_KILLED`, `NUM_DEATHS`, `ASSISTS`, `VISION_SCORE`).
+        Verificado por sondeo del feed crudo (72 nombres en `stats`): **no hay
+        stream de eventos de daño instante a instante**, solo estos contadores
+        acumulados desde el inicio de la partida — diferenciar entre ticks
+        consecutivos para obtener daño-por-segundo es responsabilidad del
+        consumidor, no de este observador (frontera de extracción).
 
     Semántica de consulta puntual: `snapshot_at(pid, t)` devuelve el último snapshot
     con `t_s <= t` (mismo criterio que `MidGameStatsObserver`).
@@ -56,6 +69,30 @@ class PlayerTimelineObserver(Observer):
         "spellVamp": "spell_vamp",
         "cooldownReduction": "cdr",
         "ccReduction": "cc_reduction",
+    }
+
+    # Contadores acumulados de la lista `stats` (mismo campo que el CS) → clave
+    # de salida. Nombres verificados contra el feed real (sondeo de 72 nombres
+    # en `stats_update.participants[].stats`).
+    _COMBAT_TOTALS_STATS = {
+        "TOTAL_DAMAGE_DEALT_TO_CHAMPIONS": "damage_to_champions",
+        "MAGIC_DAMAGE_DEALT_TO_CHAMPIONS": "magic_damage_to_champions",
+        "PHYSICAL_DAMAGE_DEALT_TO_CHAMPIONS": "physical_damage_to_champions",
+        "TRUE_DAMAGE_DEALT_TO_CHAMPIONS": "true_damage_to_champions",
+        "TOTAL_DAMAGE_TAKEN": "damage_taken",
+        "TOTAL_DAMAGE_TAKEN_FROM_CHAMPIONS": "damage_taken_from_champions",
+        "MAGIC_DAMAGE_TAKEN": "magic_damage_taken",
+        "PHYSICAL_DAMAGE_TAKEN": "physical_damage_taken",
+        "TRUE_DAMAGE_TAKEN": "true_damage_taken",
+        "TOTAL_DAMAGE_SELF_MITIGATED": "damage_self_mitigated",
+        "TOTAL_DAMAGE_SHIELDED_ON_TEAMMATES": "damage_shielded_on_teammates",
+        "TOTAL_HEAL_ON_TEAMMATES": "heal_on_teammates",
+        "TIME_CCING_OTHERS": "time_ccing_others",
+        "TOTAL_TIME_CROWD_CONTROL_DEALT_TO_CHAMPIONS": "cc_dealt_to_champions",
+        "CHAMPIONS_KILLED": "champions_killed",
+        "NUM_DEATHS": "deaths",
+        "ASSISTS": "assists",
+        "VISION_SCORE": "vision_score",
     }
 
     def __init__(self):
@@ -106,6 +143,7 @@ class PlayerTimelineObserver(Observer):
             "items": list(p.get("items", []) or []),
             "champion_stats": self._extract_combat_stats(p),
             "cooldowns": self._extract_cooldowns(p),
+            "combat_totals": self._extract_combat_totals(p),
         }
         self._series.setdefault(pid, []).append(snapshot)
         self._times.setdefault(pid, []).append(t_s)
@@ -147,6 +185,23 @@ class PlayerTimelineObserver(Observer):
 
     def _extract_combat_stats(self, p: Dict[str, Any]) -> Dict[str, Any]:
         return {out: self._num(p.get(src)) for src, out in self._COMBAT_STATS.items()}
+
+    def _extract_combat_totals(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        """Contadores acumulados de daño/CC/kills/visión desde la lista `stats`
+        (mismo campo de donde sale el CS en `_extract_cs`).
+
+        Un nombre AUSENTE de la lista da `None` en su clave, nunca `0`: un
+        contador que el feed todavía no ha expuesto no es lo mismo que un
+        contador en cero, y no se inventa el dato (mismo criterio que
+        `_extract_cs` para MINIONS_KILLED/NEUTRAL_MINIONS_KILLED).
+        """
+        stats_list = p.get("stats")
+        stats = {s.get("name"): s.get("value") for s in stats_list} \
+            if isinstance(stats_list, list) else {}
+        return {
+            out: self._num(stats.get(src))
+            for src, out in self._COMBAT_TOTALS_STATS.items()
+        }
 
     def _extract_cooldowns(self, p: Dict[str, Any]) -> Dict[str, Any]:
         return {
@@ -214,6 +269,14 @@ class PlayerTimelineObserver(Observer):
     def get_ability_availability(self, pid: int) -> List[Dict[str, Any]]:
         """Serie de cooldowns restantes: `[{t, ...cooldowns}]`."""
         return [{"t": s["t"], **s["cooldowns"]} for s in self._series.get(pid, [])]
+
+    def get_combat_totals(self, pid: int) -> List[Dict[str, Any]]:
+        """Serie de contadores ACUMULADOS de daño a campeones / CC / kills /
+        visión: `[{t, damage_to_champions, ..., vision_score}]`. Son
+        acumulados desde el inicio de la partida, no delta por tick -- eso lo
+        calcula el consumidor. `None` en una clave = el feed no la había
+        expuesto todavía en ese snapshot."""
+        return [{"t": s["t"], **s["combat_totals"]} for s in self._series.get(pid, [])]
 
     def get_team_gold_series(self) -> Dict[int, List[Dict[str, Any]]]:
         """Oro por equipo en el tiempo: `{teamID: [{t, gold}]}`."""
