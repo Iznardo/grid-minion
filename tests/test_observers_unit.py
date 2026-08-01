@@ -1096,6 +1096,24 @@ class TestPlayerTimelineObserver(unittest.TestCase):
         self.assertEqual(totals[0]["champions_killed"], 2)
         self.assertAlmostEqual(totals[0]["vision_score"], 12.5)
 
+    def test_combat_totals_non_champion_damage(self):
+        """Daño a torres/objetivos: la evidencia de "este equipo juega para una
+        torre / para el objetivo", no todo compromiso deja daño entre campeones."""
+        obs = PlayerTimelineObserver()
+        p = self._player(1, 0, 0, 500, 100, 1, 0)
+        p["stats"] += [
+            {"name": "TOTAL_DAMAGE_DEALT_TO_TURRETS", "value": 900},
+            {"name": "TOTAL_DAMAGE_DEALT_TO_OBJECTIVES", "value": 4500},
+            {"name": "TOTAL_DAMAGE_DEALT_TO_EPIC_MONSTERS", "value": 3100},
+        ]
+        obs.notify_event(self._su(1000, [p]))
+        totals = obs.get_combat_totals(1)
+        self.assertEqual(totals[0]["damage_to_turrets"], 900)
+        self.assertEqual(totals[0]["damage_to_objectives"], 4500)
+        self.assertEqual(totals[0]["damage_to_epic_monsters"], 3100)
+        # Ausente de la lista -> None, no 0 (mismo criterio que el resto).
+        self.assertIsNone(totals[0]["damage_to_buildings"])
+
     def test_combat_totals_missing_stat_is_none_not_zero(self):
         # _player() solo mete MINIONS_KILLED/NEUTRAL_MINIONS_KILLED en `stats`:
         # el resto de contadores de combate no aparece en este evento.

@@ -39,8 +39,11 @@ class PlayerTimelineObserver(Observer):
         `TOTAL_DAMAGE_TAKEN_FROM_CHAMPIONS`), mitigación/escudo/curación
         (`TOTAL_DAMAGE_SELF_MITIGATED`, `TOTAL_DAMAGE_SHIELDED_ON_TEAMMATES`,
         `TOTAL_HEAL_ON_TEAMMATES`), CC infligido (`TIME_CCING_OTHERS`,
-        `TOTAL_TIME_CROWD_CONTROL_DEALT_TO_CHAMPIONS`) y kills/assists/visión
-        (`CHAMPIONS_KILLED`, `NUM_DEATHS`, `ASSISTS`, `VISION_SCORE`).
+        `TOTAL_TIME_CROWD_CONTROL_DEALT_TO_CHAMPIONS`), kills/assists/visión
+        (`CHAMPIONS_KILLED`, `NUM_DEATHS`, `ASSISTS`, `VISION_SCORE`) y daño a
+        lo que no son campeones (`TOTAL_DAMAGE_DEALT_TO_TURRETS`/
+        `_TO_BUILDINGS`/`_TO_OBJECTIVES`/`_TO_EPIC_MONSTERS`,
+        `TOTAL_DAMAGE_TAKEN_FROM_BUILDINGS`).
         Verificado por sondeo del feed crudo (72 nombres en `stats`): **no hay
         stream de eventos de daño instante a instante**, solo estos contadores
         acumulados desde el inicio de la partida — diferenciar entre ticks
@@ -87,6 +90,15 @@ class PlayerTimelineObserver(Observer):
         "TOTAL_DAMAGE_SELF_MITIGATED": "damage_self_mitigated",
         "TOTAL_DAMAGE_SHIELDED_ON_TEAMMATES": "damage_shielded_on_teammates",
         "TOTAL_HEAL_ON_TEAMMATES": "heal_on_teammates",
+        # Daño a lo que NO son campeones: es la evidencia por tick de "este
+        # equipo está jugando para una torre / para el objetivo", que es la
+        # otra mitad de una disputa por el mapa (no todo compromiso deja
+        # intercambio entre campeones).
+        "TOTAL_DAMAGE_DEALT_TO_TURRETS": "damage_to_turrets",
+        "TOTAL_DAMAGE_DEALT_TO_BUILDINGS": "damage_to_buildings",
+        "TOTAL_DAMAGE_DEALT_TO_OBJECTIVES": "damage_to_objectives",
+        "TOTAL_DAMAGE_DEALT_TO_EPIC_MONSTERS": "damage_to_epic_monsters",
+        "TOTAL_DAMAGE_TAKEN_FROM_BUILDINGS": "damage_taken_from_buildings",
         "TIME_CCING_OTHERS": "time_ccing_others",
         "TOTAL_TIME_CROWD_CONTROL_DEALT_TO_CHAMPIONS": "cc_dealt_to_champions",
         "CHAMPIONS_KILLED": "champions_killed",
