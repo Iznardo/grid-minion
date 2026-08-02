@@ -47,6 +47,19 @@ DDRAGON_CHAMPION_URL = (
 DEFAULT_LANG = "en_US"
 
 
+def _is_lower_key(new: Optional[int], current: Optional[int]) -> bool:
+    """True si `new` es una key numérica mejor (más baja) que `current`.
+
+    Un `None` es siempre el peor candidato: una entrada sin key no debe
+    desbancar a una que sí la tiene.
+    """
+    if new is None:
+        return False
+    if current is None:
+        return True
+    return new < current
+
+
 class ChampionResolver:
     """
     Resuelve nombres de campeón contra Data Dragon, con caché en disco y
@@ -189,18 +202,63 @@ class ChampionResolver:
         )
 
     def _apply(self, data: Dict[str, Any]) -> None:
-        """Construye los índices en memoria desde la estructura cacheada."""
+        """Construye los índices en memoria desde la estructura cacheada.
+
+        Data Dragon publica reskins de modos alternativos (las entradas `Jade_*`
+        de LoL Classic, desde el parche 16.15.1) que **repiten el display name
+        del campeón base** con otra key numérica: `Jade_Ezreal` -> name
+        `"Ezreal"`, key `60081` (= 60000 + 81). Indexando en orden, la variante
+        pisaba a la base y `normalize("Ezreal")` — el display name que emite el
+        feed de draft de GRID — devolvía `("Jade_Ezreal", 60081)`.
+
+        Regla: las variantes se ignoran. Ante un display name repetido gana la
+        entrada con la key numérica más baja (los campeones reales están todos
+        por debajo de 1000; las familias de reskins usan el offset 60000), y la
+        descartada no entra en ningún índice — tampoco en `_by_id`, para que su
+        clave interna no reintroduzca el id de la variante por la otra rama de
+        `normalize`.
+        """
         self._version = data.get("version")
+        champions: Dict[str, Dict[str, Any]] = data.get("champions", {}) or {}
+
+        # 1) Display name -> clave Riot ganadora (la de key más baja).
+        winner_by_name: Dict[str, str] = {}
+        for riot_id, champ in champions.items():
+            name = champ.get("name")
+            if not name:
+                continue
+            current = winner_by_name.get(name)
+            if current is None or _is_lower_key(
+                champ.get("key"), champions[current].get("key")
+            ):
+                winner_by_name[name] = riot_id
+
+        # 2) Índices solo con las ganadoras (y con las entradas sin display
+        #    name, que no compiten con nadie).
         by_name: Dict[str, Dict[str, Any]] = {}
         by_id: Dict[str, Optional[int]] = {}
-        for riot_id, champ in data.get("champions", {}).items():
+        for riot_id, champ in champions.items():
             name = champ.get("name")
             key = champ.get("key")
-            if name:
-                by_name[name] = {"id": riot_id, "key": key}
+            if not name:
+                by_id[riot_id] = key
+                continue
+            if winner_by_name[name] != riot_id:
+                continue  # variante de modo: se ignora
+            by_name[name] = {"id": riot_id, "key": key}
             by_id[riot_id] = key
+
         self._by_name = by_name
         self._by_id = by_id
+
+        ignored = len(champions) - len(by_id)
+        if ignored:
+            logger.debug(
+                "Data Dragon v%s: %d entradas ignoradas por repetir el display "
+                "name de un campeón base (reskins de modo).",
+                self._version,
+                ignored,
+            )
 
     # ------------------------------------------------------------------ #
     # Disco

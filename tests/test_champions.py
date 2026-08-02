@@ -43,6 +43,47 @@ class TestChampionResolverMapping(unittest.TestCase):
         self.assertEqual(self.resolver.normalize(""), ("", None))
 
 
+class TestChampionResolverModeVariants(unittest.TestCase):
+    """Reskins de modo (`Jade_*` de LoL Classic) que repiten el display name.
+
+    Data Dragon 16.15.1 introdujo 60 entradas `Jade_X` con `name` igual al del
+    campeón base y key = 60000 + key_base. No deben pisar a la base: el feed de
+    draft de GRID emite display names y devolvía el id de la variante.
+    """
+
+    def test_variante_no_pisa_al_campeon_base(self):
+        resolver = ChampionResolver.from_mapping({
+            "Ezreal": {"name": "Ezreal", "key": 81},
+            "Jade_Ezreal": {"name": "Ezreal", "key": 60081},
+        })
+        self.assertEqual(resolver.normalize("Ezreal"), ("Ezreal", 81))
+
+    def test_el_orden_de_las_entradas_es_irrelevante(self):
+        # "Jade_Zed" va antes que "Zed" alfabéticamente: no vale con quedarse
+        # con la primera entrada vista, hay que comparar keys.
+        resolver = ChampionResolver.from_mapping({
+            "Jade_Zed": {"name": "Zed", "key": 60238},
+            "Zed": {"name": "Zed", "key": 238},
+        })
+        self.assertEqual(resolver.normalize("Zed"), ("Zed", 238))
+
+    def test_la_clave_interna_de_la_variante_se_ignora(self):
+        # La variante no entra en ningún índice: su clave interna no puede
+        # reintroducir el id 60xxx por la rama de by_id.
+        resolver = ChampionResolver.from_mapping({
+            "Ezreal": {"name": "Ezreal", "key": 81},
+            "Jade_Ezreal": {"name": "Ezreal", "key": 60081},
+        })
+        self.assertEqual(resolver.normalize("Jade_Ezreal"), ("Jade_Ezreal", None))
+
+    def test_entrada_sin_key_no_desbanca_a_la_que_si_tiene(self):
+        resolver = ChampionResolver.from_mapping({
+            "Ezreal": {"name": "Ezreal", "key": 81},
+            "Jade_Ezreal": {"name": "Ezreal", "key": None},
+        })
+        self.assertEqual(resolver.normalize("Ezreal"), ("Ezreal", 81))
+
+
 class TestChampionResolverNetwork(unittest.TestCase):
     """Flujo de descarga + caché + comprobación de versión (red mockeada)."""
 
