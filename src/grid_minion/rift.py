@@ -122,6 +122,7 @@ class RiftMap:
         self.source = data.get("source")
         self._by_name = {meta["name"]: cid for cid, meta in self.cells.items()}
         self._filled = self._fill_walls()
+        self._neighbours: Optional[Dict[int, set]] = None
 
     # ---------- carga ----------
 
@@ -201,6 +202,43 @@ class RiftMap:
         out: Dict[str, List[int]] = {}
         for cid, meta in sorted(self.cells.items()):
             out.setdefault(meta["area"], []).append(cid)
+        return out
+
+    def neighbours(self, cell: Any) -> List[int]:
+        """Ids de las celdas que tocan a `cell`.
+
+        Se calcula sobre la rejilla con los muros rellenos, así que dos celdas
+        separadas por un muro fino también son vecinas (están cerca aunque no
+        se pueda cruzar en línea recta).
+        """
+        if self._neighbours is None:
+            self._neighbours = self._compute_neighbours()
+        return sorted(self._neighbours.get(self.cell(cell)["id"], ()))
+
+    def are_near(self, a: int, b: int) -> bool:
+        """¿Son la misma celda o celdas que se tocan? (ids de celda)."""
+        if a == b:
+            return True
+        if self._neighbours is None:
+            self._neighbours = self._compute_neighbours()
+        return b in self._neighbours.get(a, ())
+
+    def _compute_neighbours(self) -> Dict[int, set]:
+        out: Dict[int, set] = {cid: set() for cid in self.cells}
+        w, h, labels = self.width, self.height, self._filled
+        for row in range(h):
+            for col in range(w):
+                a = labels[row * w + col]
+                if col + 1 < w:
+                    b = labels[row * w + col + 1]
+                    if a != b and a and b:
+                        out[a].add(b)
+                        out[b].add(a)
+                if row + 1 < h:
+                    b = labels[(row + 1) * w + col]
+                    if a != b and a and b:
+                        out[a].add(b)
+                        out[b].add(a)
         return out
 
     def centroid(self, cell: Any) -> Tuple[float, float]:
