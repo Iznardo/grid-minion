@@ -1,0 +1,609 @@
+<title>Rift Cell Editor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the map is the workspace (left, square, always dark like the
+   minimap); a narrow tool rail on the right holds tools, the selected cell
+   and the cell list. Stacks to one column on phones. */
+:root {
+  --bg: #f3f4f6;
+  --panel: #ffffff;
+  --ink: #16191f;
+  --muted: #5d6573;
+  --line: #d8dce3;
+  --accent: #1f6feb;
+  --accent-ink: #ffffff;
+  --warn: #b45309;
+  --danger: #b42318;
+  --ok: #18794e;
+  --map-bg: #0d1016;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-label: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1218; --panel: #161a22; --ink: #e6e9ef; --muted: #98a1b2;
+    --line: #2a303c; --accent: #4c8dff; --accent-ink: #0b0e13;
+    --warn: #f0a44b; --danger: #ff7a6b; --ok: #4fd18b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1218; --panel: #161a22; --ink: #e6e9ef; --muted: #98a1b2;
+  --line: #2a303c; --accent: #4c8dff; --accent-ink: #0b0e13;
+  --warn: #f0a44b; --danger: #ff7a6b; --ok: #4fd18b; color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font: 14px/1.45 var(--font-ui);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px;
+}
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; max-width: 1240px; margin: 0 auto; align-items: start; }
+@media (max-width: 860px) { .app { grid-template-columns: minmax(0, 1fr); } }
+h1 { font: 600 22px/1.1 var(--font-label); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+h2 { font: 600 13px/1.2 var(--font-label); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+.mapcol { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.topbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.status { font-size: 12px; color: var(--muted); }
+.status b { color: var(--ink); font-weight: 600; }
+.dirty { color: var(--warn); font-weight: 600; }
+.mapwrap { position: relative; background: var(--map-bg); border-radius: 10px; overflow: hidden; aspect-ratio: 1 / 1; max-width: 100%; touch-action: none; }
+canvas#map { width: 100%; height: 100%; display: block; image-rendering: pixelated; cursor: crosshair; }
+.readout { display: flex; flex-wrap: wrap; gap: 4px 14px; font: 12px var(--font-mono); color: var(--muted); min-height: 18px; }
+.readout b { color: var(--ink); font-weight: 500; }
+.rail { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+button { font: 500 13px var(--font-ui); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.danger { color: var(--danger); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label.check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; }
+.field { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 6px 8px; align-items: center; }
+.field label { font: 500 12px var(--font-label); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+input[type=text], select { width: 100%; min-width: 0; font: 13px var(--font-ui); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; }
+input[type=range] { flex: 1; min-width: 80px; }
+.mono { font-family: var(--font-mono); font-size: 12px; }
+.muted { color: var(--muted); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; display: inline-block; }
+.list { max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.list .area { font: 600 12px var(--font-label); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 8px; }
+.list button { display: flex; gap: 8px; align-items: center; text-align: left; border: 0; padding: 4px 6px; border-radius: 6px; width: 100%; font-size: 12.5px; }
+.list button[aria-current="true"] { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.list .count { margin-left: auto; font: 11px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.warn { color: var(--warn); font-size: 12.5px; }
+.ok { color: var(--ok); font-size: 12.5px; }
+.toast { min-height: 18px; font-size: 12.5px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; gap: 5px; align-items: center; }
+kbd { font: 11px var(--font-mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
+@media (prefers-reduced-motion: no-preference) { button { transition: background .12s, border-color .12s; } }
+</style>
+
+<div class="app">
+  <section class="mapcol">
+    <div class="topbar">
+      <h1>Rift Cell Editor</h1>
+      <div class="status" id="status">Loading…</div>
+    </div>
+    <div class="mapwrap"><canvas id="map" width="305" height="306" aria-label="Summoner's Rift cell map"></canvas></div>
+    <div class="readout" id="readout"><span>Move over the map to inspect a cell.</span></div>
+    <div class="legend">
+      <span><i class="swatch" style="background:#b8bec9"></i>Lane, behind towers</span>
+      <span><i class="swatch" style="background:#e3b04b"></i>Lane, laning zone</span>
+      <span><i class="swatch" style="background:#3cbccb"></i>River</span>
+      <span><i class="swatch" style="background:#5b8dff"></i>Pit</span>
+      <span><i class="swatch" style="background:#4a90c8"></i>Blue jungle / base</span>
+      <span><i class="swatch" style="background:#d9774f"></i>Red jungle / base</span>
+    </div>
+  </section>
+
+  <aside class="rail">
+    <div class="card">
+      <h2>Save</h2>
+      <div class="row">
+        <button class="primary" id="save" type="button">Save to Claude</button>
+        <button id="export" type="button">Export JSON</button>
+        <button id="revert" type="button">Revert to library draft</button>
+      </div>
+      <p class="toast muted" id="toast" role="status"></p>
+    </div>
+
+    <div class="card">
+      <h2>Tools</h2>
+      <div class="row">
+        <div class="seg" role="group" aria-label="Tool">
+          <button type="button" id="tool-inspect" aria-pressed="true">Inspect <kbd>V</kbd></button>
+          <button type="button" id="tool-paint" aria-pressed="false">Paint <kbd>B</kbd></button>
+          <button type="button" id="tool-wall" aria-pressed="false">Wall <kbd>W</kbd></button>
+        </div>
+        <button type="button" id="undo" title="Ctrl+Z">Undo</button>
+        <button type="button" id="redo" title="Ctrl+Shift+Z">Redo</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label for="brush" class="muted" style="font-size:12px">Brush</label>
+        <input type="range" id="brush" min="1" max="12" value="3">
+        <span class="mono" id="brush-val">3 px</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="check"><input type="checkbox" id="mirror" checked> Mirror edits <kbd>M</kbd></label>
+        <label class="check"><input type="checkbox" id="over-walls"> Paint over walls</label>
+        <label class="check"><input type="checkbox" id="density" checked> Show traffic</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label for="color-by" class="muted" style="font-size:12px">Color by</label>
+        <select id="color-by" style="width:auto"><option value="area">Area</option><option value="cell">Cell</option></select>
+      </div>
+    </div>
+
+    <div class="card" id="cell-card">
+      <h2>Selected cell</h2>
+      <p class="muted" id="no-cell">Click a cell on the map or in the list.</p>
+      <div id="cell-form" hidden>
+        <div class="field">
+          <label for="f-name">Name</label><input type="text" id="f-name">
+          <label for="f-area">Area</label><input type="text" id="f-area" list="area-list">
+          <label for="f-kind">Kind</label>
+          <select id="f-kind"><option>lane</option><option>river</option><option>pit</option><option>jungle</option><option>base</option></select>
+          <label for="f-owner">Owner</label>
+          <select id="f-owner"><option value="">none</option><option>BLUE</option><option>RED</option></select>
+          <label for="f-lane">Lane</label>
+          <select id="f-lane"><option value="">none</option><option>top</option><option>mid</option><option>bot</option></select>
+          <label for="f-segment">Segment</label>
+          <select id="f-segment"><option value="">none</option><option>blue_back</option><option>laning</option><option>red_back</option></select>
+          <label for="f-landmark">Landmark</label><input type="text" id="f-landmark" placeholder="e.g. tribush">
+        </div>
+        <p class="mono muted" id="cell-info" style="margin:10px 0 8px"></p>
+        <div class="row">
+          <button type="button" id="new-cell">New cell like this</button>
+          <button type="button" class="danger" id="delete-cell">Delete empty cell</button>
+        </div>
+      </div>
+      <datalist id="area-list"></datalist>
+    </div>
+
+    <div class="card">
+      <h2>Checks</h2>
+      <div id="checks"></div>
+    </div>
+
+    <div class="card">
+      <h2>Cells</h2>
+      <input type="text" id="filter" placeholder="Filter by name or area" aria-label="Filter cells">
+      <div class="list" id="list" style="margin-top:8px"></div>
+    </div>
+  </aside>
+</div>
+
+<script type="application/json" id="map-data">/*__MAP__*/</script>
+<script type="text/plain" id="density-data">/*__DENSITY__*/</script>
+<script>
+(() => {
+  "use strict";
+  const BASE = JSON.parse(document.getElementById("map-data").textContent);
+  const DENSITY = document.getElementById("density-data").textContent.trim();
+  const SCHEMA = "grid-minion/rift-cells/v1";
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- state ----------
+  let W, H, labels, cells, meta;
+  let selected = null, tool = "inspect", dirty = false;
+  let undoStack = [], redoStack = [];
+
+  function rleDecode(runs, n) {
+    const out = new Int32Array(n); let k = 0;
+    for (let i = 0; i < runs.length; i += 2) { out.fill(runs[i], k, k + runs[i + 1]); k += runs[i + 1]; }
+    return out;
+  }
+  function rleEncode(arr) {
+    const out = [];
+    for (let i = 0; i < arr.length; i++) {
+      if (out.length && out[out.length - 2] === arr[i]) out[out.length - 1]++;
+      else out.push(arr[i], 1);
+    }
+    return out;
+  }
+  function load(map, sourceNote) {
+    W = map.grid.width; H = map.grid.height;
+    labels = rleDecode(map.grid.labels, W * H);
+    cells = {};
+    for (const [id, m] of Object.entries(map.cells)) cells[+id] = { ...m };
+    meta = { version: map.version, source: map.source, origin: map.grid.origin, pixel: map.grid.pixel };
+    undoStack = []; redoStack = []; dirty = false; selected = null;
+    setStatus(sourceNote);
+    renderAll();
+  }
+  function exportMap() {
+    const out = {};
+    for (const id of Object.keys(cells).map(Number).sort((a, b) => a - b)) {
+      const { name, kind, owner, lane, segment, area, landmark, mirror } = cells[id];
+      out[id] = { name, kind, owner: owner || null, lane: lane || null, segment: segment || null,
+                  area, landmark: landmark || null, mirror };
+    }
+    return {
+      schema: SCHEMA, version: meta.version, source: "edited in Rift Cell Editor",
+      grid: { origin: meta.origin, pixel: meta.pixel, width: W, height: H, labels: rleEncode(labels) },
+      cells: out,
+    };
+  }
+
+  // ---------- symmetry ----------
+  const mirrorIndex = (i) => { const r = Math.floor(i / W), c = i % W; return (H - 1 - r) * W + (W - 1 - c); };
+  const SWAP = { blue: "red", red: "blue", top: "bot", bot: "top", baron: "dragon", dragon: "baron" };
+  function swapWords(text) {
+    if (!text) return text;
+    const parts = text.split("_");
+    return parts.map((p, i) => ((p === "red" || p === "blue") && parts[i + 1] === "buff") ? p : (SWAP[p] || p)).join("_");
+  }
+  function mirrorValue(field, value) {
+    if (field === "owner") return { BLUE: "RED", RED: "BLUE" }[value] || value;
+    if (field === "lane") return { top: "bot", bot: "top" }[value] || value;
+    if (field === "segment") return { blue_back: "red_back", red_back: "blue_back" }[value] || value;
+    if (field === "name" || field === "area" || field === "landmark") return swapWords(value);
+    return value;
+  }
+
+  // ---------- colors ----------
+  function hashHue(s) { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % 360; }
+  function hsl(h, s, l) {
+    s /= 100; l /= 100;
+    const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+    const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+  }
+  function baseColor(m) {
+    if (m.kind === "lane") return m.segment === "laning" ? [40, 72, 60] : [218, 12, 76];
+    if (m.kind === "river") return [186, 55, 52];
+    if (m.kind === "pit") return [222, 85, 66];
+    if (m.owner === "BLUE") return m.kind === "base" ? [218, 60, 58] : [205, 50, 54];
+    if (m.owner === "RED") return m.kind === "base" ? [8, 62, 58] : [18, 62, 58];
+    return [0, 0, 60];
+  }
+  const colorCache = new Map();
+  function cellRGB(id) {
+    const key = id + ":" + $("color-by").value;
+    if (colorCache.has(key)) return colorCache.get(key);
+    const m = cells[id]; let rgb;
+    if (!m) rgb = [255, 0, 255];
+    else if ($("color-by").value === "cell") rgb = hsl(hashHue(m.name + id), 55, 55);
+    else {
+      const [h, s, l] = baseColor(m);
+      const j = ((id * 37) % 13) - 6;
+      rgb = hsl((h + j * 2 + 360) % 360, s, Math.max(20, Math.min(85, l + j)));
+    }
+    colorCache.set(key, rgb); return rgb;
+  }
+
+  // ---------- render ----------
+  const canvas = $("map"), ctx = canvas.getContext("2d");
+  let image = null, pending = false;
+  function render() {
+    if (pending) return; pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+      if (!image || image.width !== W) image = ctx.createImageData(W, H);
+      const d = image.data, showDensity = $("density").checked;
+      for (let r = 0; r < H; r++) {
+        const yRow = (H - 1 - r) * W;
+        for (let c = 0; c < W; c++) {
+          const i = r * W + c, o = (yRow + c) * 4, id = labels[i];
+          const dv = DENSITY.charCodeAt(i) - 48; // 0-9
+          const glow = showDensity ? dv * 9 : 0;
+          if (!id) { d[o] = 13 + glow * 0.5; d[o + 1] = 16 + glow * 0.5; d[o + 2] = 22 + glow * 0.6; d[o + 3] = 255; continue; }
+          let [R, G, B] = cellRGB(id);
+          const edge = (c + 1 < W && labels[i + 1] !== id) || (r + 1 < H && labels[i + W] !== id) ||
+                       (c > 0 && labels[i - 1] !== id) || (r > 0 && labels[i - W] !== id);
+          const k = showDensity ? 0.72 + dv * 0.035 : 1;
+          R *= k; G *= k; B *= k;
+          if (id === selected) { R = R * 0.5 + 127; G = G * 0.5 + 127; B = B * 0.5 + 127; }
+          if (edge) { R *= 0.25; G *= 0.25; B *= 0.25; if (id === selected) { R = 255; G = 255; B = 255; } }
+          d[o] = R; d[o + 1] = G; d[o + 2] = B; d[o + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, 0, 0);
+    });
+  }
+
+  function pixelCounts() {
+    const counts = new Map();
+    for (let i = 0; i < labels.length; i++) { const id = labels[i]; if (id) counts.set(id, (counts.get(id) || 0) + 1); }
+    return counts;
+  }
+
+  function renderList() {
+    const q = $("filter").value.trim().toLowerCase();
+    const counts = pixelCounts();
+    const byArea = {};
+    for (const [id, m] of Object.entries(cells)) (byArea[m.area] ||= []).push(+id);
+    const list = $("list"); list.textContent = "";
+    for (const area of Object.keys(byArea).sort()) {
+      const ids = byArea[area].filter((id) => !q || area.toLowerCase().includes(q) || cells[id].name.toLowerCase().includes(q));
+      if (!ids.length) continue;
+      const head = document.createElement("div"); head.className = "area"; head.textContent = area; list.append(head);
+      for (const id of ids.sort((a, b) => cells[a].name.localeCompare(cells[b].name))) {
+        const b = document.createElement("button"); b.type = "button";
+        b.setAttribute("aria-current", String(id === selected));
+        const sw = document.createElement("i"); sw.className = "swatch"; sw.style.background = `rgb(${cellRGB(id).join(",")})`;
+        const name = document.createElement("span"); name.textContent = cells[id].name;
+        const n = document.createElement("span"); n.className = "count"; n.textContent = (counts.get(id) || 0).toLocaleString();
+        b.append(sw, name, n);
+        b.addEventListener("click", () => select(id));
+        list.append(b);
+      }
+    }
+    const dl = $("area-list"); dl.textContent = "";
+    for (const area of Object.keys(byArea).sort()) { const o = document.createElement("option"); o.value = area; dl.append(o); }
+  }
+
+  function renderChecks() {
+    const counts = pixelCounts(), issues = [];
+    const names = new Map();
+    for (const [id, m] of Object.entries(cells)) {
+      if (!counts.get(+id)) issues.push(`${m.name} has no pixels.`);
+      if (names.has(m.name)) issues.push(`Two cells are named ${m.name}.`);
+      names.set(m.name, id);
+      const mm = cells[m.mirror];
+      if (!mm) { issues.push(`${m.name} has no mirror cell.`); continue; }
+      for (const f of ["kind", "owner", "lane", "segment", "area"]) {
+        if ((mm[f] || null) !== (mirrorValue(f, m[f]) || null)) { issues.push(`${m.name} and its mirror disagree on ${f}.`); break; }
+      }
+    }
+    let asym = 0;
+    for (let i = 0; i < labels.length; i++) {
+      const id = labels[i], j = labels[mirrorIndex(i)];
+      if ((id ? cells[id]?.mirror : 0) !== j) asym++;
+    }
+    if (asym) issues.push(`${asym.toLocaleString()} pixels are not mirrored (turn on Mirror edits to keep the map symmetric).`);
+    const box = $("checks"); box.textContent = "";
+    if (!issues.length) { const p = document.createElement("p"); p.className = "ok"; p.textContent = `No problems. ${Object.keys(cells).length} cells, symmetric.`; box.append(p); return; }
+    for (const text of issues.slice(0, 12)) { const p = document.createElement("p"); p.className = "warn"; p.style.margin = "0 0 4px"; p.textContent = text; box.append(p); }
+    if (issues.length > 12) { const p = document.createElement("p"); p.className = "muted"; p.textContent = `…and ${issues.length - 12} more.`; box.append(p); }
+  }
+
+  function renderForm() {
+    const m = selected ? cells[selected] : null;
+    $("no-cell").hidden = !!m; $("cell-form").hidden = !m;
+    if (!m) return;
+    $("f-name").value = m.name; $("f-area").value = m.area; $("f-kind").value = m.kind;
+    $("f-owner").value = m.owner || ""; $("f-lane").value = m.lane || ""; $("f-segment").value = m.segment || "";
+    $("f-landmark").value = m.landmark || "";
+    const n = pixelCounts().get(selected) || 0;
+    const area = n * meta.pixel * meta.pixel;
+    $("cell-info").textContent = `id ${selected} · ${n.toLocaleString()} px (≈${Math.round(area / 1e4) / 100} M units²) · mirror: ${cells[m.mirror]?.name ?? "missing"}`;
+    $("delete-cell").disabled = n > 0 || (pixelCounts().get(m.mirror) || 0) > 0;
+  }
+
+  function renderAll() { colorCache.clear(); render(); renderList(); renderForm(); renderChecks(); }
+
+  function setStatus(note) {
+    $("status").innerHTML = "";
+    const parts = [note, `${Object.keys(cells).length} cells`];
+    $("status").append(parts.join(" · "));
+    if (dirty) { const s = document.createElement("span"); s.className = "dirty"; s.textContent = " · unsaved changes"; $("status").append(s); }
+  }
+  let statusNote = "";
+  function markDirty() { if (!dirty) { dirty = true; setStatus(statusNote); } }
+  function toast(text, kind) { const t = $("toast"); t.textContent = text; t.className = "toast " + (kind || "muted"); }
+
+  // ---------- selection & tools ----------
+  function select(id) { selected = id; render(); renderList(); renderForm(); }
+  function setTool(t) {
+    tool = t;
+    for (const k of ["inspect", "paint", "wall"]) $("tool-" + k).setAttribute("aria-pressed", String(k === t));
+    canvas.style.cursor = t === "inspect" ? "pointer" : "crosshair";
+    if (t === "paint" && !selected) toast("Select a cell first: Paint fills pixels with the selected cell.", "warn");
+  }
+  $("tool-inspect").onclick = () => setTool("inspect");
+  $("tool-paint").onclick = () => setTool("paint");
+  $("tool-wall").onclick = () => setTool("wall");
+  $("brush").oninput = () => { $("brush-val").textContent = $("brush").value + " px"; };
+  $("density").onchange = render;
+  $("color-by").onchange = () => { colorCache.clear(); render(); renderList(); };
+  $("filter").oninput = renderList;
+
+  function eventPixel(e) {
+    const rect = canvas.getBoundingClientRect();
+    const c = Math.floor((e.clientX - rect.left) / rect.width * W);
+    const rFromTop = Math.floor((e.clientY - rect.top) / rect.height * H);
+    if (c < 0 || c >= W || rFromTop < 0 || rFromTop >= H) return null;
+    return { c, r: H - 1 - rFromTop };
+  }
+
+  let stroke = null;
+  function paintAt(p) {
+    const target = tool === "wall" ? 0 : selected;
+    if (target === null || target === undefined) return;
+    const rad = +$("brush").value, mirror = $("mirror").checked, overWalls = $("over-walls").checked || tool === "wall";
+    const mirrorTarget = target ? cells[target].mirror : 0;
+    for (let dr = -rad + 1; dr < rad; dr++) for (let dc = -rad + 1; dc < rad; dc++) {
+      if (dr * dr + dc * dc > (rad - 0.5) ** 2) continue;
+      const r = p.r + dr, c = p.c + dc;
+      if (r < 0 || r >= H || c < 0 || c >= W) continue;
+      const i = r * W + c;
+      const apply = (idx, value) => {
+        const old = labels[idx];
+        if (old === value || (!old && !overWalls)) return;
+        if (!stroke.has(idx)) stroke.set(idx, old);
+        labels[idx] = value;
+      };
+      apply(i, target);
+      if (mirror) apply(mirrorIndex(i), mirrorTarget);
+    }
+    render();
+  }
+
+  canvas.addEventListener("pointermove", (e) => {
+    const p = eventPixel(e); if (!p) return;
+    const id = labels[p.r * W + p.c];
+    const x = Math.round(meta.origin[0] + (p.c + 0.5) * meta.pixel), y = Math.round(meta.origin[1] + (p.r + 0.5) * meta.pixel);
+    const ro = $("readout"); ro.textContent = "";
+    const add = (k, v) => { const s = document.createElement("span"); s.append(k + " "); const b = document.createElement("b"); b.textContent = v; s.append(b); ro.append(s); };
+    add("x", x); add("y", y);
+    if (id) { add("cell", cells[id].name); add("area", cells[id].area); } else add("", "wall");
+    if (stroke) paintAt(p);
+  });
+  canvas.addEventListener("pointerdown", (e) => {
+    const p = eventPixel(e); if (!p) return;
+    if (tool === "inspect") { const id = labels[p.r * W + p.c]; if (id) select(id); return; }
+    if (tool === "paint" && !selected) { toast("Select a cell first: Paint fills pixels with the selected cell.", "warn"); return; }
+    canvas.setPointerCapture(e.pointerId);
+    stroke = new Map(); paintAt(p);
+  });
+  const endStroke = () => {
+    if (!stroke) return;
+    if (stroke.size) {
+      const changes = []; for (const [i, old] of stroke) changes.push([i, old, labels[i]]);
+      undoStack.push({ type: "pixels", changes }); redoStack = []; markDirty();
+      renderList(); renderForm(); renderChecks();
+    }
+    stroke = null;
+  };
+  canvas.addEventListener("pointerup", endStroke);
+  canvas.addEventListener("pointercancel", endStroke);
+
+  // ---------- metadata edits ----------
+  function setMeta(id, field, value) {
+    const before = { ...cells[id] };
+    cells[id][field] = value || (field === "name" || field === "area" ? cells[id][field] : null);
+    const changes = [[id, before, { ...cells[id] }]];
+    if ($("mirror").checked && cells[id].mirror && cells[cells[id].mirror]) {
+      const mid = cells[id].mirror, mb = { ...cells[mid] };
+      cells[mid][field] = mirrorValue(field, cells[id][field]);
+      changes.push([mid, mb, { ...cells[mid] }]);
+    }
+    undoStack.push({ type: "meta", changes }); redoStack = []; markDirty();
+    colorCache.clear(); render(); renderList(); renderChecks();
+  }
+  const bind = (el, field) => $(el).addEventListener("change", () => { if (selected) setMeta(selected, field, $(el).value.trim()); renderForm(); });
+  bind("f-name", "name"); bind("f-area", "area"); bind("f-kind", "kind"); bind("f-owner", "owner");
+  bind("f-lane", "lane"); bind("f-segment", "segment"); bind("f-landmark", "landmark");
+
+  $("new-cell").onclick = () => {
+    if (!selected) return;
+    const ids = Object.keys(cells).map(Number), a = Math.max(...ids) + 1, b = a + 1;
+    const src = cells[selected];
+    let name = src.name + "_new", k = 2;
+    const taken = new Set(Object.values(cells).map((m) => m.name));
+    while (taken.has(name) || taken.has(swapWords(name))) name = `${src.name}_new${k++}`;
+    cells[a] = { ...src, name, landmark: null, mirror: b };
+    cells[b] = { ...src, mirror: a };
+    for (const f of ["owner", "lane", "segment", "area"]) cells[b][f] = mirrorValue(f, src[f]);
+    cells[b].name = swapWords(name); cells[b].landmark = null;
+    undoStack.push({ type: "add", ids: [a, b], cells: [{ ...cells[a] }, { ...cells[b] }] }); redoStack = []; markDirty();
+    select(a); setTool("paint"); renderChecks();
+    toast(`Created ${name} and its mirror. Paint it onto the map.`, "ok");
+  };
+  $("delete-cell").onclick = () => {
+    if (!selected) return;
+    const a = selected, b = cells[a].mirror;
+    const removed = [[a, { ...cells[a] }]]; delete cells[a];
+    if (cells[b]) { removed.push([b, { ...cells[b] }]); delete cells[b]; }
+    undoStack.push({ type: "remove", removed }); redoStack = []; markDirty();
+    selected = null; renderAll();
+  };
+
+  // ---------- undo / redo ----------
+  function applyEntry(entry, forward) {
+    if (entry.type === "pixels") for (const [i, oldV, newV] of entry.changes) labels[i] = forward ? newV : oldV;
+    if (entry.type === "meta") for (const [id, before, after] of entry.changes) cells[id] = { ...(forward ? after : before) };
+    if (entry.type === "add") entry.ids.forEach((id, k) => { if (forward) cells[id] = { ...entry.cells[k] }; else delete cells[id]; });
+    if (entry.type === "remove") for (const [id, m] of entry.removed) { if (forward) delete cells[id]; else cells[id] = { ...m }; }
+    if (selected && !cells[selected]) selected = null;
+  }
+  function undo() { const e = undoStack.pop(); if (!e) return; applyEntry(e, false); redoStack.push(e); markDirty(); renderAll(); }
+  function redo() { const e = redoStack.pop(); if (!e) return; applyEntry(e, true); undoStack.push(e); markDirty(); renderAll(); }
+  $("undo").onclick = undo; $("redo").onclick = redo;
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target.matches("input[type=text], select")) return;
+    const k = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && k === "z") { e.preventDefault(); (e.shiftKey ? redo : undo)(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (k === "v") setTool("inspect");
+    if (k === "b") setTool("paint");
+    if (k === "w") setTool("wall");
+    if (k === "m") $("mirror").checked = !$("mirror").checked;
+    if (k === "[") { $("brush").value = Math.max(1, +$("brush").value - 1); $("brush").oninput(); }
+    if (k === "]") { $("brush").value = Math.min(12, +$("brush").value + 1); $("brush").oninput(); }
+  });
+
+  // ---------- save / export ----------
+  let db = null, user = null;
+  const DOC = "maps/current";
+
+  $("save").onclick = async () => {
+    if (!db) { toast("Saving needs the shared store, which isn't available here. Use Export JSON instead.", "warn"); return; }
+    $("save").disabled = true; toast("Saving…");
+    try {
+      const savedBy = user ? await user.id().catch(() => null) : null;
+      await db.doc(DOC).set({ map: exportMap(), saved_at: new Date().toISOString(), saved_by: savedBy });
+      dirty = false; statusNote = "Saved version · " + new Date().toLocaleString(); setStatus(statusNote);
+      toast("Saved. Claude can now read this version and update the library.", "ok");
+    } catch (err) {
+      toast(`Couldn't save (${err?.code || err?.message || "error"}). Your edits are still here; try again or use Export JSON.`, "warn");
+    } finally { $("save").disabled = false; }
+  };
+
+  $("export").onclick = async () => {
+    const text = JSON.stringify(exportMap());
+    try {
+      const downloads = await claude?.use?.("downloads");
+      if (downloads) { await downloads.save({ filename: "rift_cells.json", data: text }); toast("Exported rift_cells.json.", "ok"); return; }
+    } catch (err) {
+      if (err?.code === "declined") { toast("Export cancelled."); return; }
+    }
+    try { await navigator.clipboard.writeText(text); toast("Copied the JSON to the clipboard (file export isn't available here).", "ok"); }
+    catch { toast("Export isn't available in this view. Save to Claude instead.", "warn"); }
+  };
+
+  $("revert").onclick = () => {
+    if (dirty && $("revert").dataset.armed !== "1") {
+      $("revert").dataset.armed = "1"; $("revert").textContent = "Click again to discard edits";
+      setTimeout(() => { $("revert").dataset.armed = ""; $("revert").textContent = "Revert to library draft"; }, 4000);
+      return;
+    }
+    $("revert").dataset.armed = ""; $("revert").textContent = "Revert to library draft";
+    statusNote = "Library draft " + BASE.version; load(BASE, statusNote);
+    toast("Showing the library draft. Save to make it the current version.");
+  };
+
+  // ---------- start ----------
+  statusNote = "Library draft " + BASE.version;
+  load(BASE, statusNote);
+
+  (async () => {
+    if (!window.claude?.use) return;
+    try {
+      db = await claude.use("db");
+      user = await claude.use("user");
+    } catch { db = null; }
+    if (!db) { toast("Saving isn't available in this view. Export JSON still works.", "muted"); return; }
+    let timer;
+    try {
+      const snap = await Promise.race([
+        db.doc(DOC).get(),
+        new Promise((_, reject) => { timer = setTimeout(() => reject({ code: "timeout" }), 10000); }),
+      ]);
+      clearTimeout(timer);
+      const body = snap.exists ? snap.data() : null;
+      if (body?.map?.schema === SCHEMA && !dirty) {
+        statusNote = "Saved version · " + new Date(body.saved_at).toLocaleString();
+        load(JSON.parse(JSON.stringify(body.map)), statusNote);
+      }
+    } catch (err) {
+      clearTimeout(timer);
+      toast("Couldn't load the saved version; showing the library draft.", "warn");
+    }
+  })();
+})();
+</script>
