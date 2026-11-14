@@ -8,6 +8,8 @@ from .vision import WardsObserver
 from .builds import BuildObserver
 from .timeline_stats import MidGameStatsObserver
 from .solokills import SoloKillObserver
+from .positions import PositionObserver, PositionTrack
+from .game_events import GameEventsObserver, EVENT_KINDS, JUNGLE_CAMPS
 
 __all__ = [
     "Observer",
@@ -20,5 +22,10 @@ __all__ = [
     "WardsObserver",
     "BuildObserver",
     "MidGameStatsObserver",
-    "SoloKillObserver"
+    "SoloKillObserver",
+    "PositionObserver",
+    "PositionTrack",
+    "GameEventsObserver",
+    "EVENT_KINDS",
+    "JUNGLE_CAMPS",
 ]

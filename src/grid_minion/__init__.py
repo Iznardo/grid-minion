@@ -7,6 +7,7 @@ from .utils import (
 )
 from .io import iter_jsonl
 from .observers import Observer, GameEventProcessor
+from .capture import GameCapture, build_capture, capture_game
 from .sources import extract_grid_game_state
 from .champions import (
     ChampionResolver,
@@ -31,6 +32,9 @@ __all__ = [
     "split_grid_series_detailed",
     "group_riot_livestats_fragments",
     "iter_jsonl",
+    "GameCapture",
+    "build_capture",
+    "capture_game",
     "Observer",
     "GameEventProcessor",
     "extract_grid_game_state",
