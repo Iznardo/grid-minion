@@ -4,6 +4,7 @@ from array import array
 from typing import Any, Dict, Iterator, List, Optional
 
 from .base import Observer
+from ._ticks import TickSampler, participant_id
 
 logger = logging.getLogger(__name__)
 
@@ -192,53 +193,34 @@ class PositionObserver(Observer):
             t_from_s / t_to_s: Si se indican, solo se guardan muestras dentro
                 de esa ventana de tiempo de juego (segundos).
         """
-        self._sample_every_ms = sample_every_ms
-        self._t_from_ms = None if t_from_s is None else int(t_from_s * 1000)
-        self._t_to_ms = None if t_to_s is None else int(t_to_s * 1000)
+        self._sampler = TickSampler(sample_every_ms, t_from_s, t_to_s)
         self.reset()
 
     def reset(self):
         """Reinicia el estado para una nueva partida."""
         self._track = PositionTrack()
-        self._last_t: Optional[int] = None
-        # Ticks descartados por llegar repetidos o desordenados.
-        self.dropped_ticks = 0
+        self._sampler.reset()
+
+    @property
+    def dropped_ticks(self) -> int:
+        """Ticks descartados por llegar repetidos o desordenados."""
+        return self._sampler.dropped
 
     def notify_event(self, event: Dict[str, Any]):
-        schema = event.get("rfc461Schema") or event.get("eventType")
-        if schema != "stats_update":
-            return
-        game_time = event.get("gameTime")
-        if game_time is None:
-            return
-        t = int(game_time)
-        if self._t_from_ms is not None and t < self._t_from_ms:
-            return
-        if self._t_to_ms is not None and t > self._t_to_ms:
-            return
-        if self._last_t is not None:
-            if t <= self._last_t:
-                # Repetido o desordenado: el reloj compartido debe ser creciente.
-                self.dropped_ticks += 1
-                return
-            if self._sample_every_ms and t - self._last_t < self._sample_every_ms:
-                return
-        self._record_tick(t, event.get("participants") or [])
+        t = self._sampler.accept(event)
+        if t is not None:
+            self._record_tick(t, event.get("participants") or [])
 
     def _record_tick(self, t: int, participants: List[Dict[str, Any]]):
         track = self._track
         index = len(track.t_ms)
         track.t_ms.append(t)
-        self._last_t = t
 
         seen = set()
         for p in participants:
-            pid = p.get("participantID")
-            if pid is None:
-                pid = p.get("participantId")
+            pid = participant_id(p)
             if pid is None:
                 continue
-            pid = int(pid)
             if pid in seen:
                 continue
             seen.add(pid)

@@ -299,7 +299,7 @@ class TestCaptureSections(unittest.TestCase):
 
     def test_seccion_desconocida(self):
         with self.assertRaises(ValueError):
-            build_capture([], include=("stats",))
+            build_capture([], include=("no_existe",))
 
     def test_esquema_no_soportado(self):
         with self.assertRaises(GridDataError):

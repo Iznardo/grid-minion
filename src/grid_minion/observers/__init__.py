@@ -10,6 +10,9 @@ from .timeline_stats import MidGameStatsObserver
 from .solokills import SoloKillObserver
 from .positions import PositionObserver, PositionTrack
 from .game_events import GameEventsObserver, EVENT_KINDS, JUNGLE_CAMPS
+from .stats_timeline import (
+    StatsTimelineObserver, CooldownsObserver, ColumnTimeline, STATS_GROUPS,
+)
 
 __all__ = [
     "Observer",
@@ -28,4 +31,8 @@ __all__ = [
     "GameEventsObserver",
     "EVENT_KINDS",
     "JUNGLE_CAMPS",
+    "StatsTimelineObserver",
+    "CooldownsObserver",
+    "ColumnTimeline",
+    "STATS_GROUPS",
 ]

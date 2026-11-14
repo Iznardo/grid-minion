@@ -35,7 +35,7 @@ def recall_openings(
         ```
         {schema, game, params, recalls: [{
             pid, side, role, champion, name,
-            t_start, t_end, level,
+            t_start, t_end, level, gold_at_recall,
             from: {x, y, zone},               # dónde empezó a canalizar
             items_bought: [item_id, ...],     # compras en base tras el recall
             t_leave_base, shop_s,             # cuándo sale y cuánto tarda
@@ -47,9 +47,9 @@ def recall_openings(
             died: bool,                       # murió dentro de la ventana
         }]}
         ```
-        Los recalls interrumpidos no se incluyen. El oro disponible no está
-        en la captura base (posiciones + eventos): lo aportará el observer de
-        stats.
+        Los recalls interrumpidos no se incluyen. `gold_at_recall` (oro
+        disponible al llegar a base) solo se rellena si la captura incluye la
+        sección `stats` con el grupo `economy`; si no, es `None`.
     """
     require_sections(capture, "positions", "events")
     wanted = sorted(pids) if pids is not None else sorted(capture.players)
@@ -127,6 +127,9 @@ def _one_recall(capture: GameCapture, pid: int, t_end: float, window_s: float,
         "t_start": t_start,
         "t_end": t_end,
         "level": level_at(capture, pid, t_end),
+        "gold_at_recall": (capture.stats.value_at(pid, "gold_current", t_end)
+                           if capture.stats is not None
+                           and "gold_current" in capture.stats.fields else None),
         "from": zone_at(capture, pid, t_start) if t_start is not None else None,
         "items_bought": items,
         "t_leave_base": t_leave,

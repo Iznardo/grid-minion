@@ -20,10 +20,15 @@ from .exceptions import GridDataError
 from .observers.game_events import GameEventsObserver, filter_events
 from .observers.positions import PositionObserver, PositionTrack
 from .observers.processor import GameEventProcessor
+from .observers.stats_timeline import (
+    STATS_GROUPS, ColumnTimeline, CooldownsObserver, StatsTimelineObserver,
+)
 
 CAPTURE_SCHEMA = "grid-minion/capture/v1"
 
-SECTIONS = ("positions", "events")
+# Secciones posibles de una captura y las que se incluyen por defecto.
+SECTIONS = ("positions", "events", "stats", "cooldowns")
+DEFAULT_SECTIONS = ("positions", "events")
 
 
 class GameCapture:
@@ -35,9 +40,13 @@ class GameCapture:
         events: Optional[List[Dict[str, Any]]] = None,
         players: Optional[Dict[int, Dict[str, Any]]] = None,
         game: Optional[Dict[str, Any]] = None,
+        stats: Optional[ColumnTimeline] = None,
+        cooldowns: Optional[ColumnTimeline] = None,
     ):
         self.positions = positions
         self.events = events
+        self.stats = stats
+        self.cooldowns = cooldowns
         self.players: Dict[int, Dict[str, Any]] = dict(players or {})
         self.game: Dict[str, Any] = dict(game or {})
 
@@ -50,6 +59,8 @@ class GameCapture:
         events: Optional[GameEventsObserver] = None,
         series_id: Optional[str] = None,
         game_number: Optional[int] = None,
+        stats: Optional[StatsTimelineObserver] = None,
+        cooldowns: Optional[CooldownsObserver] = None,
     ) -> "GameCapture":
         """Reúne lo recogido por los observers tras procesar la partida."""
         track = positions.get_track() if positions is not None else None
@@ -72,6 +83,9 @@ class GameCapture:
             duration = track.duration_s
         if duration is None and event_list:
             duration = event_list[-1]["t"]
+        for observer in (stats, cooldowns):
+            if duration is None and observer is not None and len(observer.get_timeline()):
+                duration = observer.get_timeline().t_ms[-1] / 1000
 
         game = {
             "series_id": str(series_id) if series_id is not None else None,
@@ -79,7 +93,9 @@ class GameCapture:
             "game_version": events.game_version if events is not None else None,
             "duration_s": duration,
         }
-        return cls(positions=track, events=event_list, players=players, game=game)
+        return cls(positions=track, events=event_list, players=players, game=game,
+                   stats=stats.get_timeline() if stats is not None else None,
+                   cooldowns=cooldowns.get_timeline() if cooldowns is not None else None)
 
     # ---------- consultas ----------
 
@@ -126,6 +142,10 @@ class GameCapture:
             data["positions"] = self.positions.to_dict()
         if self.events is not None:
             data["events"] = self.events
+        if self.stats is not None:
+            data["stats"] = self.stats.to_dict()
+        if self.cooldowns is not None:
+            data["cooldowns"] = self.cooldowns.to_dict()
         return data
 
     @classmethod
@@ -138,8 +158,12 @@ class GameCapture:
         positions = None
         if data.get("positions") is not None:
             positions = PositionTrack.from_dict(data["positions"], players=players)
+        stats = ColumnTimeline.from_dict(data["stats"]) if data.get("stats") else None
+        cooldowns = (ColumnTimeline.from_dict(data["cooldowns"])
+                     if data.get("cooldowns") else None)
         return cls(positions=positions, events=data.get("events"),
-                   players=players, game=data.get("game"))
+                   players=players, game=data.get("game"),
+                   stats=stats, cooldowns=cooldowns)
 
     def save(self, path: Union[str, Path]) -> Path:
         """Guarda la captura como JSON (comprimido si `path` acaba en `.gz`)."""
@@ -167,34 +191,53 @@ class GameCapture:
 
 def build_capture(
     riot_livestats: Iterable[Dict[str, Any]],
-    include: Collection[str] = SECTIONS,
+    include: Collection[str] = DEFAULT_SECTIONS,
     series_id: Optional[str] = None,
     game_number: Optional[int] = None,
+    stats_groups: Collection[str] = STATS_GROUPS,
+    sample_every_ms: Optional[int] = None,
 ) -> GameCapture:
     """Construye una captura a partir de eventos de Riot LiveStats.
 
     `riot_livestats` puede ser una lista o un iterador en streaming
     (`grid_minion.io.iter_jsonl`, `GridRestClient.iter_riot_livestats`).
+
+    Args:
+        include: Secciones a capturar. Por defecto posiciones y eventos (lo
+            que necesitan los paquetes de scouting, ~100 KB por partida).
+            `"stats"` y `"cooldowns"` se piden aparte: pesan bastante más.
+        stats_groups: Grupos del observer de stats (ver `StatsTimelineObserver`).
+        sample_every_ms: Separación mínima entre muestras de posiciones,
+            stats y cooldowns (las tres secciones comparten reloj). `None` =
+            todas las del feed, ~1 por segundo.
     """
     unknown = set(include) - set(SECTIONS)
     if unknown:
         raise ValueError(f"Secciones desconocidas: {sorted(unknown)} (válidas: {SECTIONS})")
-    positions = PositionObserver() if "positions" in include else None
+    positions = (PositionObserver(sample_every_ms=sample_every_ms)
+                 if "positions" in include else None)
     events = GameEventsObserver() if "events" in include else None
+    stats = (StatsTimelineObserver(groups=stats_groups, sample_every_ms=sample_every_ms)
+             if "stats" in include else None)
+    cooldowns = (CooldownsObserver(sample_every_ms=sample_every_ms)
+                 if "cooldowns" in include else None)
 
     processor = GameEventProcessor()
-    for observer in (positions, events):
+    for observer in (positions, events, stats, cooldowns):
         if observer is not None:
             processor.attach(observer)
     processor.process_events(riot_livestats)
-    return GameCapture.from_observers(positions, events, series_id, game_number)
+    return GameCapture.from_observers(positions, events, series_id, game_number,
+                                      stats=stats, cooldowns=cooldowns)
 
 
 def capture_game(
     client,
     series_id: str,
     game_number: int = 1,
-    include: Collection[str] = SECTIONS,
+    include: Collection[str] = DEFAULT_SECTIONS,
+    stats_groups: Collection[str] = STATS_GROUPS,
+    sample_every_ms: Optional[int] = None,
 ) -> Optional[GameCapture]:
     """Descarga en streaming el LiveStats de una partida y devuelve su captura.
 
@@ -205,11 +248,13 @@ def capture_game(
         La captura, o `None` si GRID no tiene LiveStats de esa partida.
     """
     wanted = set()
-    if "positions" in include:
+    if {"positions", "stats", "cooldowns"} & set(include):
         wanted |= PositionObserver.schemas
     if "events" in include:
         wanted |= GameEventsObserver().schemas
     stream = client.iter_riot_livestats(series_id, game_number, schemas=wanted or None)
     if stream is None:
         return None
-    return build_capture(stream, include=include, series_id=series_id, game_number=game_number)
+    return build_capture(stream, include=include, series_id=series_id,
+                         game_number=game_number, stats_groups=stats_groups,
+                         sample_every_ms=sample_every_ms)
