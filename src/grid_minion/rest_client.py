@@ -1,11 +1,14 @@
+import gzip
+import os
 import requests
 import time
 import json
 import re
 import logging
+from pathlib import Path
 from zipfile import ZipFile
 from io import BytesIO
-from typing import Dict, Any, Optional, List, Union
+from typing import Collection, Dict, Any, Iterator, Optional, List, Union
 from .exceptions import (
     GridAPIError, 
     GridAuthError, 
@@ -14,6 +17,7 @@ from .exceptions import (
     GridDataError
 )
 from ._http import parse_retry_after
+from .io import parse_jsonl_lines
 
 logger = logging.getLogger(__name__)
 
@@ -239,6 +243,89 @@ class GridRestClient:
             except json.JSONDecodeError as e:
                 raise GridDataError(f"Error parseando JSONL de Riot LiveStats: {e}")
         return content
+
+    def iter_riot_livestats(
+        self,
+        series_id: str,
+        game_number: int = 1,
+        schemas: Optional[Collection[str]] = None,
+    ) -> Optional[Iterator[Dict[str, Any]]]:
+        """
+        Recorre los LiveStats de Riot en streaming, evento a evento.
+
+        Alternativa a `get_riot_livestats()` que no carga el fichero entero
+        (~100 MB por partida, ~500 MB como lista en memoria): solo vive en
+        memoria el evento en curso. El resultado se puede pasar tal cual a
+        `GameEventProcessor.process_bundle(riot_livestats=...)`.
+
+        Args:
+            series_id (str): ID de la serie de GRID.
+            game_number (int): Número de partida (default: 1).
+            schemas: Si se indica, solo se parsean las líneas con esos
+                `rfc461Schema` (ver `GameEventProcessor.wanted_schemas()`).
+
+        Returns:
+            Un iterador de eventos, o `None` si el archivo no existe (404),
+            igual que `get_riot_livestats()`. El iterador solo se puede
+            recorrer una vez. Un corte de red a mitad de descarga lanza
+            `GridNetworkError` (no se reintenta a medias: vuelve a llamar).
+        """
+        endpoint = f"/file-download/events/riot/series/{series_id}/games/{game_number}"
+        response = self._request("GET", endpoint, stream=True)
+        if not response:
+            return None
+        return self._stream_jsonl(response, schemas, f"Riot LiveStats {series_id}/{game_number}")
+
+    @staticmethod
+    def _stream_jsonl(response, schemas, source) -> Iterator[Dict[str, Any]]:
+        try:
+            yield from parse_jsonl_lines(
+                response.iter_lines(chunk_size=1 << 16), schemas=schemas, source=source)
+        except requests.exceptions.RequestException as e:
+            raise GridNetworkError(f"Descarga de {source} interrumpida: {e}")
+        finally:
+            response.close()
+
+    def download_riot_livestats(
+        self,
+        series_id: str,
+        game_number: int,
+        path: Union[str, Path],
+    ) -> Optional[Path]:
+        """
+        Guarda en disco el fichero crudo de LiveStats de Riot (JSON Lines).
+
+        Para archivar una partida o reprocesarla sin volver a descargarla
+        (`grid_minion.io.iter_jsonl(path)`). Si `path` termina en `.gz` se
+        guarda comprimido. La escritura es atómica: un fallo a medias no deja
+        un fichero truncado en `path`.
+
+        Returns:
+            La ruta escrita, o `None` si el archivo no existe (404).
+        """
+        endpoint = f"/file-download/events/riot/series/{series_id}/games/{game_number}"
+        response = self._request("GET", endpoint, stream=True)
+        if not response:
+            return None
+
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".part")
+        opener = gzip.open if path.suffix == ".gz" else open
+        try:
+            with opener(tmp, "wb") as fh:
+                for chunk in response.iter_content(chunk_size=1 << 20):
+                    if chunk:
+                        fh.write(chunk)
+            os.replace(tmp, path)
+        except requests.exceptions.RequestException as e:
+            raise GridNetworkError(
+                f"Descarga de Riot LiveStats {series_id}/{game_number} interrumpida: {e}")
+        finally:
+            response.close()
+            if tmp.exists():
+                tmp.unlink()
+        return path
 
     def get_grid_events(self, series_id: str) -> Optional[List[Dict[str, Any]]]:
         """

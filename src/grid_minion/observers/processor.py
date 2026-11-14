@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Any, Optional
+from typing import FrozenSet, Iterable, List, Dict, Any, Optional
 from .base import Observer
 from ..sources import normalize_tencent_details, normalize_grid_game_state
 
@@ -33,7 +33,25 @@ class GameEventProcessor:
         """
         self._observers.append(observer)
 
-    def process_events(self, events: List[Dict[str, Any]]):
+    def wanted_schemas(self) -> Optional[FrozenSet[str]]:
+        """
+        Unión de los `rfc461Schema` que necesitan los observers registrados.
+
+        Devuelve `None` si algún observer no declara `schemas` (necesita todos
+        los eventos). Pensado para pasarlo a
+        `GridRestClient.iter_riot_livestats(..., schemas=...)` o a
+        `grid_minion.io.iter_jsonl(..., schemas=...)` y no parsear lo que
+        nadie va a leer.
+        """
+        wanted = set()
+        for observer in self._observers:
+            schemas = getattr(observer, "schemas", None)
+            if schemas is None:
+                return None
+            wanted.update(schemas)
+        return frozenset(wanted)
+
+    def process_events(self, events: Iterable[Dict[str, Any]]):
         """
         Itera sobre una lista simple de eventos y notifica a los observadores.
 
@@ -46,7 +64,7 @@ class GameEventProcessor:
     def process_bundle(self, 
                        grid_state: Optional[Dict] = None, 
                        riot_summary: Optional[Dict] = None, 
-                       riot_livestats: Optional[List[Dict]] = None,
+                       riot_livestats: Optional[Iterable[Dict]] = None,
                        grid_livestats: Optional[List[Dict]] = None,
                        tencent_details: Optional[Dict] = None,
                        grid_game_state: Optional[Dict] = None,
@@ -63,7 +81,9 @@ class GameEventProcessor:
         Args:
             grid_state (Optional[Dict]): Datos del estado global de GRID.
             riot_summary (Optional[Dict]): Resumen final de Riot.
-            riot_livestats (Optional[List[Dict]]): Eventos del timeline de Riot.
+            riot_livestats (Optional[Iterable[Dict]]): Eventos del timeline de Riot.
+                Admite una lista o un iterador en streaming
+                (`GridRestClient.iter_riot_livestats`, `grid_minion.io.iter_jsonl`).
             grid_livestats (Optional[List[Dict]]): Eventos de la partida de GRID.
             tencent_details (Optional[Dict]): End-state de Tencent para LPL.
             grid_game_state (Optional[Dict]): GameState concreto de GRID para una partida.
@@ -109,7 +129,7 @@ class GameEventProcessor:
             for event in grid_livestats:
                 self._notify_all(event)
 
-        if riot_livestats:
+        if riot_livestats is not None:
             for event in riot_livestats:
                 self._notify_all(event)
 
@@ -123,7 +143,14 @@ class GameEventProcessor:
 
     def _notify_all(self, event: Dict[str, Any]):
         """Helper privado para notificar a todos los observadores."""
+        schema = None
         for observer in self._observers:
+            wanted = getattr(observer, "schemas", None)
+            if wanted is not None:
+                if schema is None:
+                    schema = event.get("rfc461Schema") or event.get("eventType") or ""
+                if schema not in wanted:
+                    continue
             try:
                 observer.notify_event(event)
             except Exception:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, FrozenSet, Optional
 
 class Observer(ABC):
     """
@@ -7,7 +7,16 @@ class Observer(ABC):
 
     Cualquier clase que desee procesar eventos del GameEventProcessor debe
     heredar de esta clase e implementar el método notify_event.
+
+    Atributo opcional `schemas`: conjunto de `rfc461Schema` de Riot LiveStats
+    que el observer necesita (p. ej. `frozenset({"stats_update"})`). Con el
+    valor por defecto, `None`, el observer recibe TODOS los eventos, de
+    cualquier fuente. Un observer que lo declara solo recibe los eventos de
+    esos esquemas, y permite a quien lee el fichero descartar el resto sin
+    parsearlo (ver `GameEventProcessor.wanted_schemas()`).
     """
+    schemas: Optional[FrozenSet[str]] = None
+
     @abstractmethod
     def notify_event(self, event: Dict[str, Any]):
         """
