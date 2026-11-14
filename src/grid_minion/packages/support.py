@@ -44,6 +44,7 @@ def support_openings(
             roams: [{type, t_enter, t_exit, duration, target_area, target_kind,
                      target_lane, areas, with_jungler_s, kills, assists,
                      deaths, wards, result}],
+            path: [{t, x, y, alive, zone, cell, area}],   # hasta `until_s`
             wards: [evento],                 # wards hasta `until_s`
             first_recall: {...} | None,      # mismo formato que recall_openings
         }]}
@@ -89,6 +90,7 @@ def support_openings(
             "level_one": level_one,
             "lane_arrival": {"t": arrival["t"], "area": arrival["area"]} if arrival else None,
             "roams": roams,
+            "path": path,
             "wards": [slim_event(e) for e in capture.get_events("ward_placed", pid=pid,
                                                                  t1_s=until_s)],
             "first_recall": first_recall,
