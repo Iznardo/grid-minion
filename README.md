@@ -24,6 +24,7 @@ Cliente de Python no oficial para las APIs de [GRID.gg](https://grid.gg/), enfoc
   - [BuildObserver](#buildobserver)
   - [MidGameStatsObserver](#midgamestatsobserver)
   - [SoloKillObserver](#solokillobserver)
+- [Posiciones y scouting](#posiciones-y-scouting)
 - [GameEventProcessor](#gameeventprocessor)
 - [Utilidades](#utilidades)
 - [Manejo de errores](#manejo-de-errores)
@@ -454,6 +455,46 @@ for k in solos.get_solokills():
 Un `champion_kill` cuenta como solokill solo si `assistants` está vacío y tanto
 killer como víctima son jugadores (1-10); las ejecuciones por torre/minion se
 descartan.
+
+---
+
+## Posiciones y scouting
+
+Desde la 0.5.0 la librería extrae la posición de cada jugador a lo largo de
+la partida y la recorta en paquetes listos para analizar. Es opcional: los
+observers anteriores no cambian.
+
+```python
+from grid_minion import capture_game
+from grid_minion.packages import level_one, jungle_pathing, recall_openings
+
+capture = capture_game(client, "2922522", game_number=1)   # ~100 KB, en streaming
+capture.save("2922522_g1.capture.json.gz")
+
+capture.position_at(2, 90)                       # dónde estaba el jugador 2 en 1:30
+jungle_pathing(capture)["junglers"][0]["first_clear"]
+# ['redcamp', 'krug', 'raptor', 'wolf', 'bluecamp', 'gromp', 'scuttlecrab']
+level_one(capture)["invades"]                    # invades de nivel 1
+recall_openings(capture)["recalls"]              # compras y destino tras cada recall
+```
+
+- **Captura** (`GameCapture`): trayectorias (1 muestra por segundo) y un
+  registro de eventos en formato común. Se guarda y se recarga, así que un
+  paquete nuevo no obliga a volver a descargar.
+- **Paquetes** (`grid_minion.packages`): `level_one`, `jungle_pathing` (con
+  candidatos a gank e invade) y `recall_openings`.
+- **Geometría** (`grid_minion.spatial`): zonas del mapa, normalización y giro
+  para comparar lados.
+- **Stats y cooldowns**: `StatsTimelineObserver` y `CooldownsObserver`,
+  separados de las posiciones y con el mismo reloj.
+- **Eventos detallados**: `CombatObserver`, `WardEventsObserver`,
+  `BuildingObserver`, `ObjectiveSpawnObserver`, `MobilityObserver`.
+- **Streaming**: `iter_riot_livestats()`, `download_riot_livestats()` e
+  `iter_jsonl()` leen el livestats sin cargarlo entero en memoria.
+
+La guía completa, con todos los campos de salida, está en
+[SCOUTING.md](SCOUTING.md). Ejemplo runnable:
+[`examples/scouting_packages.py`](examples/scouting_packages.py).
 
 ---
 
