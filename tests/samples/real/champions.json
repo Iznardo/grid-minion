@@ -1,0 +1,82 @@
+{
+ "Ambessa": {
+  "key": 799,
+  "name": "Ambessa"
+ },
+ "Annie": {
+  "key": 1,
+  "name": "Annie"
+ },
+ "Ashe": {
+  "key": 22,
+  "name": "Ashe"
+ },
+ "JarvanIV": {
+  "key": 59,
+  "name": "Jarvan IV"
+ },
+ "Jhin": {
+  "key": 202,
+  "name": "Jhin"
+ },
+ "Kalista": {
+  "key": 429,
+  "name": "Kalista"
+ },
+ "Karma": {
+  "key": 43,
+  "name": "Karma"
+ },
+ "Leblanc": {
+  "key": 7,
+  "name": "LeBlanc"
+ },
+ "Lissandra": {
+  "key": 127,
+  "name": "Lissandra"
+ },
+ "Lulu": {
+  "key": 117,
+  "name": "Lulu"
+ },
+ "Nautilus": {
+  "key": 111,
+  "name": "Nautilus"
+ },
+ "Nocturne": {
+  "key": 56,
+  "name": "Nocturne"
+ },
+ "Orianna": {
+  "key": 61,
+  "name": "Orianna"
+ },
+ "Pyke": {
+  "key": 555,
+  "name": "Pyke"
+ },
+ "Renata": {
+  "key": 888,
+  "name": "Renata Glasc"
+ },
+ "Renekton": {
+  "key": 58,
+  "name": "Renekton"
+ },
+ "Rumble": {
+  "key": 68,
+  "name": "Rumble"
+ },
+ "Ryze": {
+  "key": 13,
+  "name": "Ryze"
+ },
+ "Seraphine": {
+  "key": 147,
+  "name": "Seraphine"
+ },
+ "Zaahen": {
+  "key": 904,
+  "name": "Zaahen"
+ }
+}

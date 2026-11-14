@@ -1,0 +1,4520 @@
+{
+ "builds": {
+  "1": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 1056,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 145
+    },
+    {
+     "action": "BUY",
+     "item_id": 3047,
+     "ts_s": 430
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 432
+    },
+    {
+     "action": "BUY",
+     "item_id": 2508,
+     "ts_s": 563
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 565
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 665
+    },
+    {
+     "action": "BUY",
+     "item_id": 3147,
+     "ts_s": 794
+    },
+    {
+     "action": "BUY",
+     "item_id": 6653,
+     "ts_s": 909
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 910
+    },
+    {
+     "action": "BUY",
+     "item_id": 3363,
+     "ts_s": 910
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 990
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 1074
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1077
+    },
+    {
+     "action": "BUY",
+     "item_id": 1029,
+     "ts_s": 1179
+    },
+    {
+     "action": "BUY",
+     "item_id": 2420,
+     "ts_s": 1201
+    },
+    {
+     "action": "BUY",
+     "item_id": 3157,
+     "ts_s": 1400
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1402
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 1451
+    },
+    {
+     "action": "BUY",
+     "item_id": 1058,
+     "ts_s": 1596
+    },
+    {
+     "action": "BUY",
+     "item_id": 3145,
+     "ts_s": 1728
+    },
+    {
+     "action": "SELL",
+     "item_id": 1056,
+     "ts_s": 1729
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1730
+    },
+    {
+     "action": "BUY",
+     "item_id": 4645,
+     "ts_s": 1828
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1830
+    }
+   ],
+   "skill_order": "EQWQQRQEQEREEWWRWW"
+  },
+  "10": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 3865,
+     "ts_s": 0
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 1
+    },
+    {
+     "action": "BUY",
+     "item_id": 3340,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 3067,
+     "ts_s": 362
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 363
+    },
+    {
+     "action": "BUY",
+     "item_id": 3364,
+     "ts_s": 363
+    },
+    {
+     "action": "BUY",
+     "item_id": 3114,
+     "ts_s": 522
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 523
+    },
+    {
+     "action": "BUY",
+     "item_id": 3222,
+     "ts_s": 732
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 732
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 817
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 817
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 884
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 949
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 949
+    },
+    {
+     "action": "BUY",
+     "item_id": 3067,
+     "ts_s": 1037
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1038
+    },
+    {
+     "action": "BUY",
+     "item_id": 1029,
+     "ts_s": 1093
+    },
+    {
+     "action": "BUY",
+     "item_id": 1033,
+     "ts_s": 1209
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1210
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1210
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1299
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1377
+    },
+    {
+     "action": "BUY",
+     "item_id": 3190,
+     "ts_s": 1483
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1484
+    },
+    {
+     "action": "BUY",
+     "item_id": 2022,
+     "ts_s": 1486
+    },
+    {
+     "action": "BUY",
+     "item_id": 1033,
+     "ts_s": 1567
+    },
+    {
+     "action": "SELL",
+     "item_id": 2022,
+     "ts_s": 1677
+    },
+    {
+     "action": "BUY",
+     "item_id": 3111,
+     "ts_s": 1678
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1678
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 1853
+    },
+    {
+     "action": "BUY",
+     "item_id": 1004,
+     "ts_s": 1853
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1854
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1855
+    }
+   ],
+   "skill_order": "EQWEERWWWWREE"
+  },
+  "2": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 1101,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 5
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 208
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 209
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 210
+    },
+    {
+     "action": "BUY",
+     "item_id": 3044,
+     "ts_s": 340
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 340
+    },
+    {
+     "action": "BUY",
+     "item_id": 1042,
+     "ts_s": 565
+    },
+    {
+     "action": "BUY",
+     "item_id": 3077,
+     "ts_s": 565
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 566
+    },
+    {
+     "action": "BUY",
+     "item_id": 3364,
+     "ts_s": 566
+    },
+    {
+     "action": "BUY",
+     "item_id": 6631,
+     "ts_s": 800
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 801
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 802
+    },
+    {
+     "action": "SELL",
+     "item_id": 2003,
+     "ts_s": 803
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 804
+    },
+    {
+     "action": "BUY",
+     "item_id": 2021,
+     "ts_s": 942
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 943
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 943
+    },
+    {
+     "action": "BUY",
+     "item_id": 6610,
+     "ts_s": 1115
+    },
+    {
+     "action": "BUY",
+     "item_id": 3047,
+     "ts_s": 1116
+    },
+    {
+     "action": "BUY",
+     "item_id": 1029,
+     "ts_s": 1225
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 1226
+    },
+    {
+     "action": "BUY",
+     "item_id": 2019,
+     "ts_s": 1400
+    },
+    {
+     "action": "BUY",
+     "item_id": 1037,
+     "ts_s": 1400
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 1401
+    },
+    {
+     "action": "BUY",
+     "item_id": 6333,
+     "ts_s": 1478
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1479
+    },
+    {
+     "action": "BUY",
+     "item_id": 1038,
+     "ts_s": 1611
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 1613
+    },
+    {
+     "action": "BUY",
+     "item_id": 3026,
+     "ts_s": 1707
+    }
+   ],
+   "skill_order": "EQWQQRQEQEREEWWRWW"
+  },
+  "3": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 1056,
+     "ts_s": 1
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 3340,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 195
+    },
+    {
+     "action": "BUY",
+     "item_id": 2031,
+     "ts_s": 196
+    },
+    {
+     "action": "BUY",
+     "item_id": 1027,
+     "ts_s": 288
+    },
+    {
+     "action": "BUY",
+     "item_id": 1001,
+     "ts_s": 288
+    },
+    {
+     "action": "BUY",
+     "item_id": 1026,
+     "ts_s": 413
+    },
+    {
+     "action": "BUY",
+     "item_id": 3802,
+     "ts_s": 547
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 549
+    },
+    {
+     "action": "BUY",
+     "item_id": 3118,
+     "ts_s": 671
+    },
+    {
+     "action": "BUY",
+     "item_id": 3020,
+     "ts_s": 672
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 799
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 801
+    },
+    {
+     "action": "BUY",
+     "item_id": 3145,
+     "ts_s": 915
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 915
+    },
+    {
+     "action": "BUY",
+     "item_id": 3364,
+     "ts_s": 916
+    },
+    {
+     "action": "BUY",
+     "item_id": 3108,
+     "ts_s": 1033
+    },
+    {
+     "action": "SELL",
+     "item_id": 2031,
+     "ts_s": 1033
+    },
+    {
+     "action": "BUY",
+     "item_id": 3152,
+     "ts_s": 1049
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 1154
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1155
+    },
+    {
+     "action": "BUY",
+     "item_id": 3145,
+     "ts_s": 1318
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1319
+    },
+    {
+     "action": "SELL",
+     "item_id": 2055,
+     "ts_s": 1400
+    },
+    {
+     "action": "BUY",
+     "item_id": 3113,
+     "ts_s": 1401
+    },
+    {
+     "action": "BUY",
+     "item_id": 4646,
+     "ts_s": 1600
+    },
+    {
+     "action": "BUY",
+     "item_id": 1058,
+     "ts_s": 1603
+    },
+    {
+     "action": "SELL",
+     "item_id": 1056,
+     "ts_s": 1604
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1604
+    },
+    {
+     "action": "BUY",
+     "item_id": 4645,
+     "ts_s": 1857
+    }
+   ],
+   "skill_order": "QWEQQRQWQWRWWEEREE"
+  },
+  "4": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 1055,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 3340,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 1083,
+     "ts_s": 143
+    },
+    {
+     "action": "BUY",
+     "item_id": 1038,
+     "ts_s": 375
+    },
+    {
+     "action": "BUY",
+     "item_id": 1001,
+     "ts_s": 513
+    },
+    {
+     "action": "BUY",
+     "item_id": 1042,
+     "ts_s": 513
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 515
+    },
+    {
+     "action": "BUY",
+     "item_id": 3032,
+     "ts_s": 750
+    },
+    {
+     "action": "BUY",
+     "item_id": 1029,
+     "ts_s": 751
+    },
+    {
+     "action": "BUY",
+     "item_id": 1042,
+     "ts_s": 752
+    },
+    {
+     "action": "BUY",
+     "item_id": 3047,
+     "ts_s": 855
+    },
+    {
+     "action": "BUY",
+     "item_id": 1042,
+     "ts_s": 859
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 860
+    },
+    {
+     "action": "BUY",
+     "item_id": 3363,
+     "ts_s": 860
+    },
+    {
+     "action": "BUY",
+     "item_id": 3046,
+     "ts_s": 1063
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1065
+    },
+    {
+     "action": "SELL",
+     "item_id": 1083,
+     "ts_s": 1219
+    },
+    {
+     "action": "BUY",
+     "item_id": 1037,
+     "ts_s": 1220
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1220
+    },
+    {
+     "action": "BUY",
+     "item_id": 1038,
+     "ts_s": 1311
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1313
+    },
+    {
+     "action": "BUY",
+     "item_id": 3031,
+     "ts_s": 1400
+    },
+    {
+     "action": "BUY",
+     "item_id": 1029,
+     "ts_s": 1401
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1401
+    },
+    {
+     "action": "BUY",
+     "item_id": 1038,
+     "ts_s": 1577
+    },
+    {
+     "action": "SELL",
+     "item_id": 1055,
+     "ts_s": 1703
+    },
+    {
+     "action": "BUY",
+     "item_id": 2019,
+     "ts_s": 1705
+    },
+    {
+     "action": "BUY",
+     "item_id": 3026,
+     "ts_s": 1711
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1711
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1712
+    }
+   ],
+   "skill_order": "WEQWWRWQWQRQQEER"
+  },
+  "5": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 3865,
+     "ts_s": 0
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 3340,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 4642,
+     "ts_s": 377
+    },
+    {
+     "action": "BUY",
+     "item_id": 3364,
+     "ts_s": 378
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 536
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 539
+    },
+    {
+     "action": "BUY",
+     "item_id": 2022,
+     "ts_s": 539
+    },
+    {
+     "action": "BUY",
+     "item_id": 6617,
+     "ts_s": 740
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 742
+    },
+    {
+     "action": "BUY",
+     "item_id": 3158,
+     "ts_s": 883
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 883
+    },
+    {
+     "action": "BUY",
+     "item_id": 1004,
+     "ts_s": 970
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 971
+    },
+    {
+     "action": "BUY",
+     "item_id": 3067,
+     "ts_s": 1066
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1066
+    },
+    {
+     "action": "BUY",
+     "item_id": 3114,
+     "ts_s": 1138
+    },
+    {
+     "action": "BUY",
+     "item_id": 3222,
+     "ts_s": 1317
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1318
+    },
+    {
+     "action": "BUY",
+     "item_id": 3114,
+     "ts_s": 1399
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1399
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1476
+    },
+    {
+     "action": "BUY",
+     "item_id": 1026,
+     "ts_s": 1582
+    },
+    {
+     "action": "BUY",
+     "item_id": 6621,
+     "ts_s": 1845
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 1848
+    }
+   ],
+   "skill_order": "RQEWQQREEEERQQWW"
+  },
+  "6": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 1054,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 1037,
+     "ts_s": 233
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 234
+    },
+    {
+     "action": "BUY",
+     "item_id": 3133,
+     "ts_s": 435
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 436
+    },
+    {
+     "action": "BUY",
+     "item_id": 6692,
+     "ts_s": 597
+    },
+    {
+     "action": "BUY",
+     "item_id": 1033,
+     "ts_s": 685
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 688
+    },
+    {
+     "action": "BUY",
+     "item_id": 3111,
+     "ts_s": 823
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 824
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 937
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 938
+    },
+    {
+     "action": "BUY",
+     "item_id": 3363,
+     "ts_s": 1041
+    },
+    {
+     "action": "BUY",
+     "item_id": 2021,
+     "ts_s": 1042
+    },
+    {
+     "action": "BUY",
+     "item_id": 1037,
+     "ts_s": 1241
+    },
+    {
+     "action": "BUY",
+     "item_id": 6695,
+     "ts_s": 1469
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1470
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 1613
+    },
+    {
+     "action": "SELL",
+     "item_id": 1054,
+     "ts_s": 1821
+    },
+    {
+     "action": "BUY",
+     "item_id": 1037,
+     "ts_s": 1821
+    },
+    {
+     "action": "BUY",
+     "item_id": 3161,
+     "ts_s": 1844
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1845
+    }
+   ],
+   "skill_order": "QWEQQRQEQEREEWWRW"
+  },
+  "7": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 1101,
+     "ts_s": 1
+    },
+    {
+     "action": "BUY",
+     "item_id": 3340,
+     "ts_s": 1
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 194
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 194
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 195
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 251
+    },
+    {
+     "action": "BUY",
+     "item_id": 2021,
+     "ts_s": 434
+    },
+    {
+     "action": "BUY",
+     "item_id": 1028,
+     "ts_s": 435
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 436
+    },
+    {
+     "action": "BUY",
+     "item_id": 3044,
+     "ts_s": 584
+    },
+    {
+     "action": "BUY",
+     "item_id": 1042,
+     "ts_s": 584
+    },
+    {
+     "action": "BUY",
+     "item_id": 3364,
+     "ts_s": 585
+    },
+    {
+     "action": "BUY",
+     "item_id": 1001,
+     "ts_s": 586
+    },
+    {
+     "action": "BUY",
+     "item_id": 3073,
+     "ts_s": 737
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 738
+    },
+    {
+     "action": "BUY",
+     "item_id": 3044,
+     "ts_s": 936
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 936
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 937
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 1027
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1031
+    },
+    {
+     "action": "BUY",
+     "item_id": 6631,
+     "ts_s": 1210
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 1211
+    },
+    {
+     "action": "BUY",
+     "item_id": 1033,
+     "ts_s": 1278
+    },
+    {
+     "action": "BUY",
+     "item_id": 3111,
+     "ts_s": 1496
+    },
+    {
+     "action": "BUY",
+     "item_id": 2019,
+     "ts_s": 1498
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1567
+    },
+    {
+     "action": "BUY",
+     "item_id": 1038,
+     "ts_s": 1809
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1810
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1907
+    },
+    {
+     "action": "BUY",
+     "item_id": 3026,
+     "ts_s": 1935
+    }
+   ],
+   "skill_order": "QWQEQRQEQEREEWWR"
+  },
+  "8": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 1056,
+     "ts_s": 1
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 1
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 1
+    },
+    {
+     "action": "BUY",
+     "item_id": 3340,
+     "ts_s": 2
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 173
+    },
+    {
+     "action": "BUY",
+     "item_id": 2031,
+     "ts_s": 173
+    },
+    {
+     "action": "BUY",
+     "item_id": 3802,
+     "ts_s": 311
+    },
+    {
+     "action": "BUY",
+     "item_id": 3145,
+     "ts_s": 533
+    },
+    {
+     "action": "BUY",
+     "item_id": 1001,
+     "ts_s": 534
+    },
+    {
+     "action": "BUY",
+     "item_id": 6655,
+     "ts_s": 616
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 617
+    },
+    {
+     "action": "SELL",
+     "item_id": 2031,
+     "ts_s": 811
+    },
+    {
+     "action": "BUY",
+     "item_id": 3111,
+     "ts_s": 812
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 882
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 990
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 990
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1042
+    },
+    {
+     "action": "BUY",
+     "item_id": 1058,
+     "ts_s": 1185
+    },
+    {
+     "action": "BUY",
+     "item_id": 3364,
+     "ts_s": 1211
+    },
+    {
+     "action": "SELL",
+     "item_id": 1056,
+     "ts_s": 1399
+    },
+    {
+     "action": "BUY",
+     "item_id": 4645,
+     "ts_s": 1399
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 1493
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1494
+    },
+    {
+     "action": "BUY",
+     "item_id": 3145,
+     "ts_s": 1567
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1569
+    },
+    {
+     "action": "BUY",
+     "item_id": 3113,
+     "ts_s": 1732
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1732
+    },
+    {
+     "action": "BUY",
+     "item_id": 4646,
+     "ts_s": 1829
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 1904
+    },
+    {
+     "action": "BUY",
+     "item_id": 1058,
+     "ts_s": 1930
+    }
+   ],
+   "skill_order": "WQEWWRWQWQRQQEER"
+  },
+  "9": {
+   "build_path": [
+    {
+     "action": "BUY",
+     "item_id": 1055,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 2003,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 3340,
+     "ts_s": 3
+    },
+    {
+     "action": "BUY",
+     "item_id": 1001,
+     "ts_s": 165
+    },
+    {
+     "action": "BUY",
+     "item_id": 1042,
+     "ts_s": 166
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 166
+    },
+    {
+     "action": "BUY",
+     "item_id": 3006,
+     "ts_s": 356
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 357
+    },
+    {
+     "action": "BUY",
+     "item_id": 1053,
+     "ts_s": 531
+    },
+    {
+     "action": "BUY",
+     "item_id": 1037,
+     "ts_s": 533
+    },
+    {
+     "action": "BUY",
+     "item_id": 3153,
+     "ts_s": 733
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 733
+    },
+    {
+     "action": "BUY",
+     "item_id": 1037,
+     "ts_s": 856
+    },
+    {
+     "action": "BUY",
+     "item_id": 3363,
+     "ts_s": 857
+    },
+    {
+     "action": "BUY",
+     "item_id": 1043,
+     "ts_s": 1030
+    },
+    {
+     "action": "BUY",
+     "item_id": 1052,
+     "ts_s": 1031
+    },
+    {
+     "action": "BUY",
+     "item_id": 3124,
+     "ts_s": 1210
+    },
+    {
+     "action": "BUY",
+     "item_id": 1042,
+     "ts_s": 1211
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1212
+    },
+    {
+     "action": "BUY",
+     "item_id": 1043,
+     "ts_s": 1327
+    },
+    {
+     "action": "BUY",
+     "item_id": 1036,
+     "ts_s": 1327
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1328
+    },
+    {
+     "action": "BUY",
+     "item_id": 3051,
+     "ts_s": 1483
+    },
+    {
+     "action": "BUY",
+     "item_id": 3302,
+     "ts_s": 1566
+    },
+    {
+     "action": "BUY",
+     "item_id": 1011,
+     "ts_s": 1583
+    },
+    {
+     "action": "SELL",
+     "item_id": 2055,
+     "ts_s": 1684
+    },
+    {
+     "action": "BUY",
+     "item_id": 1057,
+     "ts_s": 1685
+    },
+    {
+     "action": "BUY",
+     "item_id": 6665,
+     "ts_s": 1853
+    },
+    {
+     "action": "BUY",
+     "item_id": 2055,
+     "ts_s": 1854
+    },
+    {
+     "action": "BUY",
+     "item_id": 1042,
+     "ts_s": 1910
+    }
+   ],
+   "skill_order": "EWQEEREQEQRQQWW"
+  }
+ },
+ "draft": {
+  "draft_found": true,
+  "fp": {
+   "bans": [
+    {
+     "id": 59,
+     "name": "JarvanIV"
+    },
+    {
+     "id": 1,
+     "name": "Annie"
+    },
+    {
+     "id": 58,
+     "name": "Renekton"
+    },
+    {
+     "id": 147,
+     "name": "Seraphine"
+    },
+    {
+     "id": 117,
+     "name": "Lulu"
+    }
+   ],
+   "picks": [
+    {
+     "id": 799,
+     "name": "Ambessa"
+    },
+    {
+     "id": 56,
+     "name": "Nocturne"
+    },
+    {
+     "id": 7,
+     "name": "Leblanc"
+    },
+    {
+     "id": 429,
+     "name": "Kalista"
+    },
+    {
+     "id": 888,
+     "name": "Renata"
+    }
+   ],
+   "team_id": "52457"
+  },
+  "is_complete": true,
+  "sp": {
+   "bans": [
+    {
+     "id": 61,
+     "name": "Orianna"
+    },
+    {
+     "id": 555,
+     "name": "Pyke"
+    },
+    {
+     "id": 13,
+     "name": "Ryze"
+    },
+    {
+     "id": 202,
+     "name": "Jhin"
+    },
+    {
+     "id": 111,
+     "name": "Nautilus"
+    }
+   ],
+   "picks": [
+    {
+     "id": 22,
+     "name": "Ashe"
+    },
+    {
+     "id": 904,
+     "name": "Zaahen"
+    },
+    {
+     "id": 127,
+     "name": "Lissandra"
+    },
+    {
+     "id": 68,
+     "name": "Rumble"
+    },
+    {
+     "id": 43,
+     "name": "Karma"
+    }
+   ],
+   "team_id": "53134"
+  }
+ },
+ "draft_status": {
+  "aborts": 0,
+  "current_complete": true,
+  "current_found": true,
+  "fallback_available": false,
+  "fallback_complete": false,
+  "fallback_source": null,
+  "game_started": true,
+  "invalidations": 1,
+  "uses_fallback": false
+ },
+ "game_stats": {
+  "meta": {
+   "end_of_game_result": "GameComplete",
+   "game_time_last_update_ms": 1945110,
+   "source": "SUMMARY",
+   "version": "16.8",
+   "winner": "BLUE",
+   "winner_source": "summary"
+  },
+  "players": {
+   "1": {
+    "assists": 12,
+    "champion": "Rumble",
+    "champion_id": 68,
+    "cs": 260,
+    "damage_dealt": 23833,
+    "deaths": 2,
+    "final_items": [
+     3047,
+     3157,
+     6653,
+     4645,
+     3363
+    ],
+    "gold": 12447,
+    "kda_str": "3/2/12",
+    "kills": 3,
+    "name": "Player 1",
+    "runes": {
+     "primary": [
+      8229,
+      8275,
+      8233,
+      8237
+     ],
+     "primary_style": 8200,
+     "stat_perks": [
+      5008,
+      5008,
+      5011
+     ],
+     "sub": [
+      8473,
+      8242
+     ],
+     "sub_style": 8400
+    },
+    "side": "BLUE",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     14,
+     4
+    ]
+   },
+   "10": {
+    "assists": 7,
+    "champion": "Renata",
+    "champion_id": 888,
+    "cs": 44,
+    "damage_dealt": 5168,
+    "deaths": 4,
+    "final_items": [
+     3222,
+     3111,
+     3190,
+     3876,
+     1052,
+     1004,
+     3364
+    ],
+    "gold": 8430,
+    "kda_str": "1/4/7",
+    "kills": 1,
+    "name": "Player 10",
+    "runes": {
+     "primary": [
+      8465,
+      8401,
+      8444,
+      8242
+     ],
+     "primary_style": 8400,
+     "stat_perks": [
+      5005,
+      5001,
+      5011
+     ],
+     "sub": [
+      8347,
+      8304
+     ],
+     "sub_style": 8300
+    },
+    "side": "RED",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     4,
+     7
+    ]
+   },
+   "2": {
+    "assists": 14,
+    "champion": "Zaahen",
+    "champion_id": 904,
+    "cs": 279,
+    "damage_dealt": 23230,
+    "deaths": 0,
+    "final_items": [
+     6631,
+     3026,
+     6610,
+     3047,
+     6333,
+     3364
+    ],
+    "gold": 16735,
+    "kda_str": "7/0/14",
+    "kills": 7,
+    "name": "Player 2",
+    "runes": {
+     "primary": [
+      8010,
+      9111,
+      9105,
+      8014
+     ],
+     "primary_style": 8000,
+     "stat_perks": [
+      5005,
+      5008,
+      5011
+     ],
+     "sub": [
+      8347,
+      8304
+     ],
+     "sub_style": 8300
+    },
+    "side": "BLUE",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     11,
+     4
+    ]
+   },
+   "3": {
+    "assists": 8,
+    "champion": "Lissandra",
+    "champion_id": 127,
+    "cs": 297,
+    "damage_dealt": 19008,
+    "deaths": 2,
+    "final_items": [
+     3152,
+     4646,
+     4645,
+     3175,
+     3118,
+     3364
+    ],
+    "gold": 13927,
+    "kda_str": "5/2/8",
+    "kills": 5,
+    "name": "Player 3",
+    "runes": {
+     "primary": [
+      8229,
+      8226,
+      8210,
+      8237
+     ],
+     "primary_style": 8200,
+     "stat_perks": [
+      5005,
+      5008,
+      5011
+     ],
+     "sub": [
+      8473,
+      8451
+     ],
+     "sub_style": 8400
+    },
+    "side": "BLUE",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     4,
+     12
+    ]
+   },
+   "4": {
+    "assists": 11,
+    "champion": "Ashe",
+    "champion_id": 22,
+    "cs": 303,
+    "damage_dealt": 28234,
+    "deaths": 4,
+    "final_items": [
+     3046,
+     3032,
+     3026,
+     3031,
+     3363
+    ],
+    "gold": 17974,
+    "kda_str": "6/4/11",
+    "kills": 6,
+    "name": "Player 4",
+    "runes": {
+     "primary": [
+      8008,
+      8009,
+      9103,
+      8017
+     ],
+     "primary_style": 8000,
+     "stat_perks": [
+      5005,
+      5008,
+      5011
+     ],
+     "sub": [
+      8347,
+      8321
+     ],
+     "sub_style": 8300
+    },
+    "side": "BLUE",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     4,
+     21
+    ]
+   },
+   "5": {
+    "assists": 19,
+    "champion": "Karma",
+    "champion_id": 43,
+    "cs": 53,
+    "damage_dealt": 4957,
+    "deaths": 1,
+    "final_items": [
+     3158,
+     6617,
+     3222,
+     3870,
+     6621,
+     1052,
+     3364
+    ],
+    "gold": 10083,
+    "kda_str": "1/1/19",
+    "kills": 1,
+    "name": "Player 5",
+    "runes": {
+     "primary": [
+      8214,
+      8224,
+      8234,
+      8237
+     ],
+     "primary_style": 8200,
+     "stat_perks": [
+      5008,
+      5008,
+      5011
+     ],
+     "sub": [
+      8347,
+      8304
+     ],
+     "sub_style": 8300
+    },
+    "side": "BLUE",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     7,
+     4
+    ]
+   },
+   "6": {
+    "assists": 2,
+    "champion": "Ambessa",
+    "champion_id": 799,
+    "cs": 260,
+    "damage_dealt": 16645,
+    "deaths": 4,
+    "final_items": [
+     6692,
+     3161,
+     3111,
+     6695,
+     3363
+    ],
+    "gold": 10347,
+    "kda_str": "0/4/2",
+    "kills": 0,
+    "name": "Player 6",
+    "runes": {
+     "primary": [
+      8437,
+      8401,
+      8444,
+      8242
+     ],
+     "primary_style": 8400,
+     "stat_perks": [
+      5008,
+      5008,
+      5011
+     ],
+     "sub": [
+      8304,
+      8345
+     ],
+     "sub_style": 8300
+    },
+    "side": "RED",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     4,
+     12
+    ]
+   },
+   "7": {
+    "assists": 6,
+    "champion": "Nocturne",
+    "champion_id": 56,
+    "cs": 235,
+    "damage_dealt": 13279,
+    "deaths": 6,
+    "final_items": [
+     3111,
+     6631,
+     2055,
+     3026,
+     3073,
+     3364
+    ],
+    "gold": 11999,
+    "kda_str": "2/6/6",
+    "kills": 2,
+    "name": "Player 7",
+    "runes": {
+     "primary": [
+      8010,
+      9111,
+      9104,
+      8017
+     ],
+     "primary_style": 8000,
+     "stat_perks": [
+      5005,
+      5008,
+      5001
+     ],
+     "sub": [
+      8143,
+      8106
+     ],
+     "sub_style": 8100
+    },
+    "side": "RED",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     11,
+     4
+    ]
+   },
+   "8": {
+    "assists": 4,
+    "champion": "Leblanc",
+    "champion_id": 7,
+    "cs": 284,
+    "damage_dealt": 20992,
+    "deaths": 3,
+    "final_items": [
+     3173,
+     4646,
+     1052,
+     1058,
+     4645,
+     6655,
+     3364
+    ],
+    "gold": 12587,
+    "kda_str": "2/3/4",
+    "kills": 2,
+    "name": "Player 8",
+    "runes": {
+     "primary": [
+      8112,
+      8143,
+      8137,
+      8106
+     ],
+     "primary_style": 8100,
+     "stat_perks": [
+      5005,
+      5008,
+      5011
+     ],
+     "sub": [
+      8473,
+      8242
+     ],
+     "sub_style": 8400
+    },
+    "side": "RED",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     4,
+     12
+    ]
+   },
+   "9": {
+    "assists": 4,
+    "champion": "Kalista",
+    "champion_id": 429,
+    "cs": 319,
+    "damage_dealt": 18927,
+    "deaths": 5,
+    "final_items": [
+     1042,
+     3153,
+     3302,
+     3124,
+     1055,
+     6665,
+     3363
+    ],
+    "gold": 15055,
+    "kda_str": "4/5/4",
+    "kills": 4,
+    "name": "Player 9",
+    "runes": {
+     "primary": [
+      8008,
+      9111,
+      9104,
+      8299
+     ],
+     "primary_style": 8000,
+     "stat_perks": [
+      5005,
+      5008,
+      5011
+     ],
+     "sub": [
+      8444,
+      8242
+     ],
+     "sub_style": 8400
+    },
+    "side": "RED",
+    "source": "SUMMARY",
+    "summoner_spells": [
+     4,
+     1
+    ]
+   }
+  }
+ },
+ "midgame": {
+  "1": {
+   "marks": {
+    "14": {
+     "cs": 127,
+     "game_time_s": 839.026,
+     "gold": 4503,
+     "xp": 8076
+    },
+    "7": {
+     "cs": 63,
+     "game_time_s": 419.025,
+     "gold": 2443,
+     "xp": 3431
+    }
+   }
+  },
+  "10": {
+   "marks": {
+    "14": {
+     "cs": 33,
+     "game_time_s": 839.026,
+     "gold": 3410,
+     "xp": 4145
+    },
+    "7": {
+     "cs": 15,
+     "game_time_s": 419.025,
+     "gold": 1647,
+     "xp": 1766
+    }
+   }
+  },
+  "2": {
+   "marks": {
+    "14": {
+     "cs": 122,
+     "game_time_s": 839.026,
+     "gold": 5049,
+     "xp": 6542
+    },
+    "7": {
+     "cs": 55,
+     "game_time_s": 419.025,
+     "gold": 2448,
+     "xp": 2780
+    }
+   }
+  },
+  "3": {
+   "marks": {
+    "14": {
+     "cs": 148,
+     "game_time_s": 839.026,
+     "gold": 5487,
+     "xp": 7936
+    },
+    "7": {
+     "cs": 68,
+     "game_time_s": 419.025,
+     "gold": 2516,
+     "xp": 3606
+    }
+   }
+  },
+  "4": {
+   "marks": {
+    "14": {
+     "cs": 143,
+     "game_time_s": 839.026,
+     "gold": 5861,
+     "xp": 5112
+    },
+    "7": {
+     "cs": 66,
+     "game_time_s": 419.025,
+     "gold": 2482,
+     "xp": 2337
+    }
+   }
+  },
+  "5": {
+   "marks": {
+    "14": {
+     "cs": 38,
+     "game_time_s": 839.026,
+     "gold": 3288,
+     "xp": 4480
+    },
+    "7": {
+     "cs": 13,
+     "game_time_s": 419.025,
+     "gold": 1628,
+     "xp": 2099
+    }
+   }
+  },
+  "6": {
+   "marks": {
+    "14": {
+     "cs": 140,
+     "game_time_s": 839.026,
+     "gold": 5011,
+     "xp": 8389
+    },
+    "7": {
+     "cs": 61,
+     "game_time_s": 419.025,
+     "gold": 2417,
+     "xp": 3559
+    }
+   }
+  },
+  "7": {
+   "marks": {
+    "14": {
+     "cs": 111,
+     "game_time_s": 839.026,
+     "gold": 4880,
+     "xp": 6282
+    },
+    "7": {
+     "cs": 56,
+     "game_time_s": 419.025,
+     "gold": 2522,
+     "xp": 2855
+    }
+   }
+  },
+  "8": {
+   "marks": {
+    "14": {
+     "cs": 140,
+     "game_time_s": 839.026,
+     "gold": 4789,
+     "xp": 7131
+    },
+    "7": {
+     "cs": 76,
+     "game_time_s": 419.025,
+     "gold": 2656,
+     "xp": 3858
+    }
+   }
+  },
+  "9": {
+   "marks": {
+    "14": {
+     "cs": 144,
+     "game_time_s": 839.026,
+     "gold": 5638,
+     "xp": 5513
+    },
+    "7": {
+     "cs": 64,
+     "game_time_s": 419.025,
+     "gold": 2436,
+     "xp": 2485
+    }
+   }
+  }
+ },
+ "midgame_max_game_time": 1945110,
+ "objectives": {
+  "atakhans": [],
+  "barons": [
+   {
+    "killer_id": 2,
+    "team": "BLUE",
+    "time": 1395.266
+   },
+   {
+    "killer_id": 4,
+    "team": "BLUE",
+    "time": 1823.422
+   }
+  ],
+  "dragons": [
+   {
+    "killer_id": 7,
+    "team": "RED",
+    "time": 327.674,
+    "type": "chemtech"
+   },
+   {
+    "killer_id": 7,
+    "team": "RED",
+    "time": 705.29,
+    "type": "earth"
+   },
+   {
+    "killer_id": 2,
+    "team": "BLUE",
+    "time": 1060.66,
+    "type": "water"
+   },
+   {
+    "killer_id": 2,
+    "team": "BLUE",
+    "time": 1473.68,
+    "type": "water"
+   },
+   {
+    "killer_id": 2,
+    "team": "BLUE",
+    "time": 1857.816,
+    "type": "water"
+   }
+  ],
+  "heralds": [
+   {
+    "killer_id": 2,
+    "team": "BLUE",
+    "time": 935.452
+   }
+  ],
+  "voidgrubs": [
+   {
+    "killer_id": 2,
+    "team": "BLUE",
+    "time": 500.534
+   },
+   {
+    "killer_id": 2,
+    "team": "BLUE",
+    "time": 510.589
+   },
+   {
+    "killer_id": 2,
+    "team": "BLUE",
+    "time": 512.993
+   }
+  ]
+ },
+ "participants": [
+  {
+   "champion_id": 68,
+   "champion_name": "Rumble",
+   "grid_player_id": "24716",
+   "grid_team_id": "53134",
+   "puuid": "puuid-player-1",
+   "riot_id": 1,
+   "summoner_name": "Player 1",
+   "team_id": 100,
+   "team_side": "BLUE"
+  },
+  {
+   "champion_id": 904,
+   "champion_name": "Zaahen",
+   "grid_player_id": "24052",
+   "grid_team_id": "53134",
+   "puuid": "puuid-player-2",
+   "riot_id": 2,
+   "summoner_name": "Player 2",
+   "team_id": 100,
+   "team_side": "BLUE"
+  },
+  {
+   "champion_id": 127,
+   "champion_name": "Lissandra",
+   "grid_player_id": "22632",
+   "grid_team_id": "53134",
+   "puuid": "puuid-player-3",
+   "riot_id": 3,
+   "summoner_name": "Player 3",
+   "team_id": 100,
+   "team_side": "BLUE"
+  },
+  {
+   "champion_id": 22,
+   "champion_name": "Ashe",
+   "grid_player_id": "28555",
+   "grid_team_id": "53134",
+   "puuid": "puuid-player-4",
+   "riot_id": 4,
+   "summoner_name": "Player 4",
+   "team_id": 100,
+   "team_side": "BLUE"
+  },
+  {
+   "champion_id": 43,
+   "champion_name": "Karma",
+   "grid_player_id": "22368",
+   "grid_team_id": "53134",
+   "puuid": "puuid-player-5",
+   "riot_id": 5,
+   "summoner_name": "Player 5",
+   "team_id": 100,
+   "team_side": "BLUE"
+  },
+  {
+   "champion_id": 799,
+   "champion_name": "Ambessa",
+   "grid_player_id": "29421",
+   "grid_team_id": "52457",
+   "puuid": "puuid-player-6",
+   "riot_id": 6,
+   "summoner_name": "Player 6",
+   "team_id": 200,
+   "team_side": "RED"
+  },
+  {
+   "champion_id": 56,
+   "champion_name": "Nocturne",
+   "grid_player_id": "21938",
+   "grid_team_id": "52457",
+   "puuid": "puuid-player-7",
+   "riot_id": 7,
+   "summoner_name": "Player 7",
+   "team_id": 200,
+   "team_side": "RED"
+  },
+  {
+   "champion_id": 7,
+   "champion_name": "Leblanc",
+   "grid_player_id": "24838",
+   "grid_team_id": "52457",
+   "puuid": "puuid-player-8",
+   "riot_id": 8,
+   "summoner_name": "Player 8",
+   "team_id": 200,
+   "team_side": "RED"
+  },
+  {
+   "champion_id": 429,
+   "champion_name": "Kalista",
+   "grid_player_id": "27509",
+   "grid_team_id": "52457",
+   "puuid": "puuid-player-9",
+   "riot_id": 9,
+   "summoner_name": "Player 9",
+   "team_id": 200,
+   "team_side": "RED"
+  },
+  {
+   "champion_id": 888,
+   "champion_name": "Renata",
+   "grid_player_id": "21348",
+   "grid_team_id": "52457",
+   "puuid": "puuid-player-10",
+   "riot_id": 10,
+   "summoner_name": "Player 10",
+   "team_id": 200,
+   "team_side": "RED"
+  }
+ ],
+ "solokills": [],
+ "wards": [
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 8456,
+    "y": 6204
+   },
+   "team": "BLUE",
+   "time": 28.401,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 10304,
+    "y": 3164
+   },
+   "team": "BLUE",
+   "time": 29.269,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 9340,
+    "y": 5538
+   },
+   "team": "RED",
+   "time": 43.23,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 4834,
+    "y": 8574
+   },
+   "team": "BLUE",
+   "time": 43.864,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 13146,
+    "y": 1974
+   },
+   "team": "RED",
+   "time": 66.314,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 13524,
+    "y": 2774
+   },
+   "team": "RED",
+   "time": 84.753,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 2",
+   "position": {
+    "x": 7694,
+    "y": 5016
+   },
+   "team": "BLUE",
+   "time": 117.053,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 12166,
+    "y": 4498
+   },
+   "team": "BLUE",
+   "time": 138.295,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 12980,
+    "y": 3087
+   },
+   "team": "RED",
+   "time": 145.377,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 2586,
+    "y": 13536
+   },
+   "team": "RED",
+   "time": 146.479,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 10582,
+    "y": 3054
+   },
+   "team": "BLUE",
+   "time": 185.174,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 8506,
+    "y": 5362
+   },
+   "team": "RED",
+   "time": 190.087,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 11560,
+    "y": 3804
+   },
+   "team": "RED",
+   "time": 192.258,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 2",
+   "position": {
+    "x": 6234,
+    "y": 9456
+   },
+   "team": "BLUE",
+   "time": 199.973,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 12831,
+    "y": 3107
+   },
+   "team": "RED",
+   "time": 203.146,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 13510,
+    "y": 2748
+   },
+   "team": "RED",
+   "time": 214.945,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 12168,
+    "y": 4394
+   },
+   "team": "BLUE",
+   "time": 251.523,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 3066,
+    "y": 8310
+   },
+   "team": "RED",
+   "time": 262.045,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 3290,
+    "y": 11380
+   },
+   "team": "BLUE",
+   "time": 264.082,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 3356,
+    "y": 11332
+   },
+   "team": "RED",
+   "time": 267.823,
+   "type": "control"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 9860,
+    "y": 4608
+   },
+   "team": "RED",
+   "time": 292.003,
+   "type": "control"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 8506,
+    "y": 4920
+   },
+   "team": "RED",
+   "time": 296.012,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 10024,
+    "y": 5992
+   },
+   "team": "BLUE",
+   "time": 340.466,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 8788,
+    "y": 6574
+   },
+   "team": "RED",
+   "time": 345.109,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 12178,
+    "y": 4482
+   },
+   "team": "BLUE",
+   "time": 349.752,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 2",
+   "position": {
+    "x": 8532,
+    "y": 6246
+   },
+   "team": "BLUE",
+   "time": 362.078,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 12843,
+    "y": 3229
+   },
+   "team": "RED",
+   "time": 386.158,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 12186,
+    "y": 1328
+   },
+   "team": "BLUE",
+   "time": 404.595,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 11588,
+    "y": 3828
+   },
+   "team": "RED",
+   "time": 404.962,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 10600,
+    "y": 3030
+   },
+   "team": "RED",
+   "time": 407.166,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 1822,
+    "y": 13046
+   },
+   "team": "RED",
+   "time": 430.18,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 12248,
+    "y": 1322
+   },
+   "team": "BLUE",
+   "time": 452.758,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 6306,
+    "y": 10116
+   },
+   "team": "BLUE",
+   "time": 461.208,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 6306,
+    "y": 8296
+   },
+   "team": "RED",
+   "time": 469.191,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 4168,
+    "y": 11828
+   },
+   "team": "BLUE",
+   "time": 474.301,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 3286,
+    "y": 11488
+   },
+   "team": "RED",
+   "time": 504.377,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 12518,
+    "y": 1520
+   },
+   "team": "RED",
+   "time": 518.207,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 2",
+   "position": {
+    "x": 8264,
+    "y": 10214
+   },
+   "team": "BLUE",
+   "time": 521.48,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 12196,
+    "y": 1378
+   },
+   "team": "BLUE",
+   "time": 544.037,
+   "type": "control"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 12858,
+    "y": 1840
+   },
+   "team": "BLUE",
+   "time": 548.712,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8744,
+    "y": 6330
+   },
+   "team": "RED",
+   "time": 548.98,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 9293,
+    "y": 3809
+   },
+   "team": "RED",
+   "time": 556.566,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 12762,
+    "y": 2957
+   },
+   "team": "RED",
+   "time": 561.175,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 9274,
+    "y": 5361
+   },
+   "team": "BLUE",
+   "time": 561.309,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 10342,
+    "y": 3270
+   },
+   "team": "BLUE",
+   "time": 570.093,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 13106,
+    "y": 2014
+   },
+   "team": "RED",
+   "time": 574.206,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 8530,
+    "y": 6264
+   },
+   "team": "BLUE",
+   "time": 574.673,
+   "type": "control"
+  },
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 10006,
+    "y": 6028
+   },
+   "team": "BLUE",
+   "time": 580.185,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 6488,
+    "y": 8548
+   },
+   "team": "RED",
+   "time": 589.469,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 12170,
+    "y": 4440
+   },
+   "team": "BLUE",
+   "time": 598.956,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 13304,
+    "y": 4014
+   },
+   "team": "RED",
+   "time": 598.99,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 12182,
+    "y": 4504
+   },
+   "team": "RED",
+   "time": 601.466,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 3262,
+    "y": 11394
+   },
+   "team": "BLUE",
+   "time": 603.67,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 3268,
+    "y": 11430
+   },
+   "team": "RED",
+   "time": 610.655,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 2",
+   "position": {
+    "x": 11582,
+    "y": 7056
+   },
+   "team": "BLUE",
+   "time": 619.405,
+   "type": "control"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 1783,
+    "y": 10954
+   },
+   "team": "BLUE",
+   "time": 623.948,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 12170,
+    "y": 4796
+   },
+   "team": "RED",
+   "time": 633.407,
+   "type": "control"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 8886,
+    "y": 6662
+   },
+   "team": "RED",
+   "time": 644.042,
+   "type": "control"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 10080,
+    "y": 6080
+   },
+   "team": "RED",
+   "time": 648.928,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 11504,
+    "y": 3902
+   },
+   "team": "RED",
+   "time": 649.295,
+   "type": "control"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 9930,
+    "y": 3894
+   },
+   "team": "BLUE",
+   "time": 687.048,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 5368,
+    "y": 12954
+   },
+   "team": "RED",
+   "time": 705.958,
+   "type": "control"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 3302,
+    "y": 11390
+   },
+   "team": "RED",
+   "time": 740.972,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 8380,
+    "y": 4776
+   },
+   "team": "BLUE",
+   "time": 752.805,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 8197,
+    "y": 8163
+   },
+   "team": "RED",
+   "time": 760.361,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 2206,
+    "y": 10006
+   },
+   "team": "BLUE",
+   "time": 760.427,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 4916,
+    "y": 8650
+   },
+   "team": "BLUE",
+   "time": 761.53,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 10564,
+    "y": 3012
+   },
+   "team": "RED",
+   "time": 761.83,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 3424,
+    "y": 9307
+   },
+   "team": "RED",
+   "time": 761.93,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 6502,
+    "y": 8620
+   },
+   "team": "RED",
+   "time": 766.005,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 4880,
+    "y": 8548
+   },
+   "team": "RED",
+   "time": 775.626,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 6288,
+    "y": 8384
+   },
+   "team": "RED",
+   "time": 777.997,
+   "type": "control"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 4968,
+    "y": 8588
+   },
+   "team": "RED",
+   "time": 788.847,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 7786,
+    "y": 7976
+   },
+   "team": "RED",
+   "time": 813.731,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 4970,
+    "y": 8502
+   },
+   "team": "BLUE",
+   "time": 823.493,
+   "type": "control"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 6334,
+    "y": 8380
+   },
+   "team": "BLUE",
+   "time": 827.067,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 6662,
+    "y": 10018
+   },
+   "team": "BLUE",
+   "time": 830.941,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 4894,
+    "y": 8576
+   },
+   "team": "BLUE",
+   "time": 899.419,
+   "type": "control"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 6156,
+    "y": 8238
+   },
+   "team": "BLUE",
+   "time": 902.22,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 5028,
+    "y": 10090
+   },
+   "team": "RED",
+   "time": 902.988,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 7244,
+    "y": 9198
+   },
+   "team": "RED",
+   "time": 903.957,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 7772,
+    "y": 7962
+   },
+   "team": "RED",
+   "time": 904.825,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 4188,
+    "y": 11838
+   },
+   "team": "BLUE",
+   "time": 907.397,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 10314,
+    "y": 2906
+   },
+   "team": "RED",
+   "time": 907.965,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 4610,
+    "y": 11936
+   },
+   "team": "RED",
+   "time": 916.181,
+   "type": "control"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 5274,
+    "y": 10858
+   },
+   "team": "RED",
+   "time": 918.819,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 6568,
+    "y": 8668
+   },
+   "team": "RED",
+   "time": 921.658,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 7036,
+    "y": 9320
+   },
+   "team": "RED",
+   "time": 924.13,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8790,
+    "y": 6544
+   },
+   "team": "RED",
+   "time": 931.244,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8028,
+    "y": 4854
+   },
+   "team": "RED",
+   "time": 936.755,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 11502,
+    "y": 3850
+   },
+   "team": "BLUE",
+   "time": 936.989,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8224,
+    "y": 3482
+   },
+   "team": "RED",
+   "time": 940.202,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 8450,
+    "y": 6186
+   },
+   "team": "BLUE",
+   "time": 950.924,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 9467,
+    "y": 5299
+   },
+   "team": "BLUE",
+   "time": 960.912,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 9754,
+    "y": 3898
+   },
+   "team": "BLUE",
+   "time": 964.854,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 7921,
+    "y": 7911
+   },
+   "team": "RED",
+   "time": 975.589,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 8602,
+    "y": 6310
+   },
+   "team": "BLUE",
+   "time": 995.974,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 10100,
+    "y": 6012
+   },
+   "team": "BLUE",
+   "time": 1000.416,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 10910,
+    "y": 4348
+   },
+   "team": "BLUE",
+   "time": 1005.593,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8584,
+    "y": 6420
+   },
+   "team": "RED",
+   "time": 1009.835,
+   "type": "control"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 8752,
+    "y": 6492
+   },
+   "team": "RED",
+   "time": 1010.102,
+   "type": "control"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 3314,
+    "y": 11420
+   },
+   "team": "BLUE",
+   "time": 1041.444,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 4966,
+    "y": 8652
+   },
+   "team": "RED",
+   "time": 1076.367,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 7980,
+    "y": 8243
+   },
+   "team": "RED",
+   "time": 1079.912,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 6390,
+    "y": 8394
+   },
+   "team": "RED",
+   "time": 1084.02,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 2294,
+    "y": 9774
+   },
+   "team": "BLUE",
+   "time": 1097.243,
+   "type": "control"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 4916,
+    "y": 8606
+   },
+   "team": "BLUE",
+   "time": 1102.028,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 5990,
+    "y": 8190
+   },
+   "team": "BLUE",
+   "time": 1102.028,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 3324,
+    "y": 9196
+   },
+   "team": "RED",
+   "time": 1105.467,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 3485,
+    "y": 9203
+   },
+   "team": "BLUE",
+   "time": 1106.169,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 4878,
+    "y": 8670
+   },
+   "team": "RED",
+   "time": 1111.484,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 10420,
+    "y": 3088
+   },
+   "team": "RED",
+   "time": 1117.73,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 7876,
+    "y": 5968
+   },
+   "team": "RED",
+   "time": 1118.164,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 4288,
+    "y": 11872
+   },
+   "team": "BLUE",
+   "time": 1124.143,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 4916,
+    "y": 8558
+   },
+   "team": "BLUE",
+   "time": 1124.31,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 8274,
+    "y": 8039
+   },
+   "team": "RED",
+   "time": 1125.245,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8916,
+    "y": 6516
+   },
+   "team": "RED",
+   "time": 1128.518,
+   "type": "control"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 8332,
+    "y": 4828
+   },
+   "team": "BLUE",
+   "time": 1130.897,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 6458,
+    "y": 8500
+   },
+   "team": "RED",
+   "time": 1139.617,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 4966,
+    "y": 8584
+   },
+   "team": "RED",
+   "time": 1142.83,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 4954,
+    "y": 8590
+   },
+   "team": "RED",
+   "time": 1145.067,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 3294,
+    "y": 9208
+   },
+   "team": "RED",
+   "time": 1151.513,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 2484,
+    "y": 9698
+   },
+   "team": "RED",
+   "time": 1153.149,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 2",
+   "position": {
+    "x": 4944,
+    "y": 8598
+   },
+   "team": "BLUE",
+   "time": 1154.82,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 4930,
+    "y": 8512
+   },
+   "team": "BLUE",
+   "time": 1154.886,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 3180,
+    "y": 9160
+   },
+   "team": "BLUE",
+   "time": 1163.539,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 3326,
+    "y": 11310
+   },
+   "team": "BLUE",
+   "time": 1175.131,
+   "type": "control"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 2504,
+    "y": 13496
+   },
+   "team": "RED",
+   "time": 1179.506,
+   "type": "yellowTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 5246,
+    "y": 12956
+   },
+   "team": "BLUE",
+   "time": 1188.231,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 4550,
+    "y": 12078
+   },
+   "team": "RED",
+   "time": 1198.467,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 6064,
+    "y": 8170
+   },
+   "team": "BLUE",
+   "time": 1231.282,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 8133,
+    "y": 8189
+   },
+   "team": "RED",
+   "time": 1231.583,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 7844,
+    "y": 5728
+   },
+   "team": "BLUE",
+   "time": 1251.431,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8112,
+    "y": 7890
+   },
+   "team": "RED",
+   "time": 1257.449,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 8484,
+    "y": 6298
+   },
+   "team": "BLUE",
+   "time": 1257.482,
+   "type": "control"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 4908,
+    "y": 8612
+   },
+   "team": "RED",
+   "time": 1258.684,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8746,
+    "y": 6530
+   },
+   "team": "RED",
+   "time": 1261.959,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 9556,
+    "y": 7056
+   },
+   "team": "BLUE",
+   "time": 1286.411,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 6408,
+    "y": 9526
+   },
+   "team": "RED",
+   "time": 1287.48,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 5412,
+    "y": 10330
+   },
+   "team": "RED",
+   "time": 1289.485,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 11502,
+    "y": 7124
+   },
+   "team": "BLUE",
+   "time": 1295.764,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 12023,
+    "y": 6456
+   },
+   "team": "BLUE",
+   "time": 1298.47,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 6396,
+    "y": 8316
+   },
+   "team": "RED",
+   "time": 1316.138,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8836,
+    "y": 6636
+   },
+   "team": "RED",
+   "time": 1323.859,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 6310,
+    "y": 8314
+   },
+   "team": "BLUE",
+   "time": 1340.967,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 9142,
+    "y": 8928
+   },
+   "team": "BLUE",
+   "time": 1365.669,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 8286,
+    "y": 10310
+   },
+   "team": "BLUE",
+   "time": 1374.654,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 6558,
+    "y": 10018
+   },
+   "team": "BLUE",
+   "time": 1379.631,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 10012,
+    "y": 6072
+   },
+   "team": "RED",
+   "time": 1408.092,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8900,
+    "y": 6538
+   },
+   "team": "RED",
+   "time": 1410.431,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8576,
+    "y": 8440
+   },
+   "team": "RED",
+   "time": 1417.894,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 12962,
+    "y": 5832
+   },
+   "team": "BLUE",
+   "time": 1423.271,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 4370,
+    "y": 11742
+   },
+   "team": "RED",
+   "time": 1424.207,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8270,
+    "y": 10242
+   },
+   "team": "RED",
+   "time": 1426.345,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 10066,
+    "y": 6064
+   },
+   "team": "BLUE",
+   "time": 1429.485,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 9189,
+    "y": 9802
+   },
+   "team": "RED",
+   "time": 1430.353,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 10026,
+    "y": 7896
+   },
+   "team": "BLUE",
+   "time": 1431.889,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 11768,
+    "y": 9846
+   },
+   "team": "RED",
+   "time": 1437.075,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 11590,
+    "y": 7158
+   },
+   "team": "BLUE",
+   "time": 1441.421,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 3302,
+    "y": 7802
+   },
+   "team": "BLUE",
+   "time": 1483.673,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 6360,
+    "y": 9982
+   },
+   "team": "BLUE",
+   "time": 1498.678,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 8945,
+    "y": 9438
+   },
+   "team": "RED",
+   "time": 1502.852,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 2",
+   "position": {
+    "x": 8218,
+    "y": 10214
+   },
+   "team": "BLUE",
+   "time": 1504.69,
+   "type": "control"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 8320,
+    "y": 10206
+   },
+   "team": "RED",
+   "time": 1507.996,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 8171,
+    "y": 11704
+   },
+   "team": "BLUE",
+   "time": 1513.08,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 9784,
+    "y": 11774
+   },
+   "team": "RED",
+   "time": 1516.42,
+   "type": "control"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 8086,
+    "y": 11850
+   },
+   "team": "RED",
+   "time": 1523.506,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8944,
+    "y": 12811
+   },
+   "team": "RED",
+   "time": 1535.519,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 8676,
+    "y": 12666
+   },
+   "team": "BLUE",
+   "time": 1539.468,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 7324,
+    "y": 12702
+   },
+   "team": "BLUE",
+   "time": 1547.534,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8338,
+    "y": 10156
+   },
+   "team": "RED",
+   "time": 1616.148,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 11594,
+    "y": 7194
+   },
+   "team": "RED",
+   "time": 1620.366,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 7038,
+    "y": 11380
+   },
+   "team": "RED",
+   "time": 1624.073,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 8682,
+    "y": 8534
+   },
+   "team": "BLUE",
+   "time": 1628.448,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 5314,
+    "y": 13050
+   },
+   "team": "RED",
+   "time": 1628.716,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 9556,
+    "y": 10003
+   },
+   "team": "RED",
+   "time": 1631.565,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 3",
+   "position": {
+    "x": 11608,
+    "y": 7098
+   },
+   "team": "BLUE",
+   "time": 1635.607,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 11780,
+    "y": 9836
+   },
+   "team": "RED",
+   "time": 1645.631,
+   "type": "control"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 4896,
+    "y": 8614
+   },
+   "team": "BLUE",
+   "time": 1671.41,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 6404,
+    "y": 9966
+   },
+   "team": "BLUE",
+   "time": 1681.203,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 4497,
+    "y": 11438
+   },
+   "team": "BLUE",
+   "time": 1687.649,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 9737,
+    "y": 9394
+   },
+   "team": "RED",
+   "time": 1704.087,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 5282,
+    "y": 12974
+   },
+   "team": "BLUE",
+   "time": 1705.122,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 8570,
+    "y": 6218
+   },
+   "team": "BLUE",
+   "time": 1723.945,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 8196,
+    "y": 10230
+   },
+   "team": "RED",
+   "time": 1738.208,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 6694,
+    "y": 9992
+   },
+   "team": "RED",
+   "time": 1745.659,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 8105,
+    "y": 8746
+   },
+   "team": "RED",
+   "time": 1747.229,
+   "type": "unknown"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 6392,
+    "y": 8530
+   },
+   "team": "RED",
+   "time": 1748.866,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 7496,
+    "y": 7338
+   },
+   "team": "BLUE",
+   "time": 1752.422,
+   "type": "control"
+  },
+  {
+   "placer": "Player 8",
+   "position": {
+    "x": 4994,
+    "y": 9976
+   },
+   "team": "RED",
+   "time": 1754.426,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 7654,
+    "y": 9298
+   },
+   "team": "RED",
+   "time": 1770.732,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 6164,
+    "y": 8296
+   },
+   "team": "RED",
+   "time": 1772.17,
+   "type": "control"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 6152,
+    "y": 8184
+   },
+   "team": "BLUE",
+   "time": 1776.412,
+   "type": "control"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 6286,
+    "y": 10058
+   },
+   "team": "RED",
+   "time": 1782.423,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 4930,
+    "y": 8546
+   },
+   "team": "RED",
+   "time": 1782.991,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 6558,
+    "y": 8394
+   },
+   "team": "RED",
+   "time": 1787.707,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 7396,
+    "y": 8816
+   },
+   "team": "BLUE",
+   "time": 1791.415,
+   "type": "control"
+  },
+  {
+   "placer": "Player 10",
+   "position": {
+    "x": 6406,
+    "y": 10054
+   },
+   "team": "RED",
+   "time": 1801.398,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 6488,
+    "y": 10054
+   },
+   "team": "BLUE",
+   "time": 1806.862,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 4890,
+    "y": 8526
+   },
+   "team": "BLUE",
+   "time": 1811.405,
+   "type": "sight"
+  },
+  {
+   "placer": "Player 4",
+   "position": {
+    "x": 10426,
+    "y": 5020
+   },
+   "team": "BLUE",
+   "time": 1833.69,
+   "type": "blueTrinket"
+  },
+  {
+   "placer": "Player 6",
+   "position": {
+    "x": 11766,
+    "y": 9856
+   },
+   "team": "RED",
+   "time": 1857.515,
+   "type": "control"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 10004,
+    "y": 7980
+   },
+   "team": "BLUE",
+   "time": 1863.196,
+   "type": "control"
+  },
+  {
+   "placer": "Player 7",
+   "position": {
+    "x": 8692,
+    "y": 6446
+   },
+   "team": "RED",
+   "time": 1876.599,
+   "type": "control"
+  },
+  {
+   "placer": "Player 5",
+   "position": {
+    "x": 8924,
+    "y": 6552
+   },
+   "team": "BLUE",
+   "time": 1879.708,
+   "type": "control"
+  },
+  {
+   "placer": "Player 9",
+   "position": {
+    "x": 12902,
+    "y": 5922
+   },
+   "team": "RED",
+   "time": 1899.755,
+   "type": "control"
+  },
+  {
+   "placer": "Player 1",
+   "position": {
+    "x": 11442,
+    "y": 7208
+   },
+   "team": "BLUE",
+   "time": 1900.322,
+   "type": "blueTrinket"
+  }
+ ]
+}
