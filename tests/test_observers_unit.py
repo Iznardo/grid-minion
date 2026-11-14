@@ -44,6 +44,22 @@ class TestTeamsObserver(unittest.TestCase):
         obs = TeamsObserver()
         self.assertEqual(obs.get_player_name(99), "Unknown")
 
+    def test_puuid_null_no_tumba_al_resto(self):
+        """`"puuid": null` (no ausente) no debe impedir registrar a nadie."""
+        obs = TeamsObserver()
+        obs.notify_event(self._make_summary_event([
+            {"participantId": 1, "riotIdGameName": "Faker", "teamId": 100,
+             "championName": "Orianna", "puuid": None},
+            {"participantId": 6, "riotIdGameName": "Zeus", "teamId": 200,
+             "championName": "Gnar", "puuid": "bbb"},
+        ]))
+        obs.notify_event({"type": "series-started-game", "state": {"teams": [{
+            "id": "T1", "players": [{"id": "1", "externalLinks": [
+                {"dataProvider": {"name": "RIOT_PUUID"}, "externalEntity": {"id": None}}
+            ]}]}]}})
+        self.assertEqual(obs.get_player_by_id(1).puuid, "")
+        self.assertEqual(obs.get_player_by_id(6).puuid, "bbb")
+
     def test_puuid_crossreference(self):
         """Los IDs de GRID se enlazan al jugador correcto via PUUID."""
         obs = TeamsObserver()
@@ -134,7 +150,7 @@ class TestDraftObserver(unittest.TestCase):
         """Serie GRID 2972536: el feed pierde los 3 bans iniciales del azul.
 
         El primer evento observado es un ban del rojo, pero FP es el azul
-        (pickea primero). Ver docs/bug_draft_observer_fp_dropped_bans.md.
+        (pickea primero). Regresión del commit a87fd98.
         """
         obs = DraftObserver()
         blue, red = "CITA", "GIANTX"
@@ -635,6 +651,45 @@ class TestLPLSources(unittest.TestCase):
         self.assertEqual(len(result["fp"]["picks"]), 5)
         self.assertTrue(status["uses_fallback"])
         self.assertEqual(status["fallback_source"], "grid_game_state")
+
+    @staticmethod
+    def _actions(seq):
+        return [
+            {"sequenceNumber": str(i), "type": t, "drafter": {"id": team},
+             "draftable": {"name": champ}}
+            for i, (t, team, champ) in enumerate(seq, start=1)
+        ]
+
+    def test_grid_game_state_fp_is_first_picker_not_first_banner(self):
+        # B banea primero (lado azul) pero A tiene el First Pick: el FP lo
+        # decide el primer pick, igual que DraftObserver (commit a87fd98).
+        actions = self._actions([
+            ("ban", "B", "Aatrox"), ("ban", "A", "Ahri"),
+            ("ban", "B", "Akali"), ("ban", "A", "Alistar"),
+            ("pick", "A", "Annie"), ("pick", "B", "Ashe"),
+        ])
+        draft = normalize_grid_game_state({"draftActions": actions})["draft"]
+        self.assertEqual(draft["fp"]["team_id"], "A")
+        self.assertEqual(draft["sp"]["team_id"], "B")
+        self.assertEqual(draft["fp"]["picks"], ["Annie"])
+        self.assertEqual(draft["fp"]["bans"], ["Ahri", "Alistar"])
+        self.assertEqual(draft["sp"]["bans"], ["Aatrox", "Akali"])
+
+    def test_grid_game_state_bans_only_falls_back_to_first_actor(self):
+        actions = self._actions([("ban", "B", "Aatrox"), ("ban", "A", "Ahri")])
+        draft = normalize_grid_game_state({"draftActions": actions})["draft"]
+        self.assertEqual(draft["fp"]["team_id"], "B")
+        self.assertFalse(draft["is_complete"])
+
+    def test_grid_game_state_ignores_actions_without_drafter(self):
+        actions = self._actions([
+            ("ban", "A", "Aatrox"), ("ban", "B", "Ahri"), ("pick", "A", "Annie"),
+        ])
+        actions.append({"sequenceNumber": "4", "type": "pick",
+                        "drafter": {}, "draftable": {"name": "Ghost"}})
+        draft = normalize_grid_game_state({"draftActions": actions})["draft"]
+        self.assertNotIn("None", (draft["fp"]["team_id"], draft["sp"]["team_id"]))
+        self.assertNotIn("Ghost", draft["fp"]["picks"] + draft["sp"]["picks"])
 
 
 # ---------------------------------------------------------------------------

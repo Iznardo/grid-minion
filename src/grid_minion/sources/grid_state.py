@@ -70,41 +70,61 @@ def _participant(player: Dict[str, Any], team: Dict[str, Any], index: int) -> Di
     }
 
 
+def _drafter_id(action: Dict[str, Any]) -> Optional[str]:
+    """Id del equipo que ejecuta la acción, o `None` si no viene."""
+    raw = (action.get("drafter") or {}).get("id")
+    return str(raw) if raw is not None else None
+
+
 def _draft_from_actions(actions: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Reconstruye el draft desde los `draftActions` finales de GRID.
+
+    First Pick = el equipo del **primer pick** de la secuencia (pick1 es
+    siempre el blind pick de FP), no el de la primera acción: la primera
+    acción es un ban y su orden depende del lado, no de quién tiene FP. Es la
+    misma regla que aplica `DraftObserver`. Solo si no hay ningún pick se cae
+    al orden de aparición de los equipos.
+    """
     if not actions:
         return None
 
     ordered = sorted(actions, key=lambda a: int(a.get("sequenceNumber", 0) or 0))
     team_order: List[str] = []
-    sides = {}
+    sides: Dict[str, Dict[str, Any]] = {}
     for action in ordered:
-        drafter = action.get("drafter") or {}
-        team_id = str(drafter.get("id"))
-        if team_id and team_id not in team_order:
+        team_id = _drafter_id(action)
+        if team_id is None:
+            continue
+        if team_id not in team_order:
             team_order.append(team_id)
-        if team_id:
-            sides.setdefault(team_id, {
-                "team_id": team_id,
-                "picks": [],
-                "bans": [],
-            })
+        sides.setdefault(team_id, {
+            "team_id": team_id,
+            "picks": [],
+            "bans": [],
+        })
 
     if len(team_order) < 2:
         return None
 
     for action in ordered:
-        team_id = str((action.get("drafter") or {}).get("id"))
-        draftable = action.get("draftable") or {}
-        champion = draftable.get("name")
-        if not team_id or team_id not in sides:
+        team_id = _drafter_id(action)
+        if team_id is None:
             continue
+        champion = (action.get("draftable") or {}).get("name")
         if action.get("type") == "pick":
             sides[team_id]["picks"].append(champion)
         elif action.get("type") == "ban":
             sides[team_id]["bans"].append(champion)
 
-    first = sides[team_order[0]]
-    second = sides[team_order[1]]
+    first_pick_team = next(
+        (_drafter_id(a) for a in ordered
+         if a.get("type") == "pick" and _drafter_id(a) is not None),
+        team_order[0],
+    )
+    second_pick_team = next(t for t in team_order if t != first_pick_team)
+
+    first = sides[first_pick_team]
+    second = sides[second_pick_team]
     return {
         "draft_found": bool(first["picks"] or first["bans"] or second["picks"] or second["bans"]),
         "is_complete": len(first["picks"]) == 5 and len(second["picks"]) == 5,

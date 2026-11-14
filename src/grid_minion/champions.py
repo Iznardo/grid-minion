@@ -159,7 +159,9 @@ class ChampionResolver:
 
         try:
             latest = self._fetch_latest_version()
-        except GridNetworkError as exc:
+        except (GridNetworkError, GridDataError) as exc:
+            # Red caída o versions.json corrupto: ambos casos se cubren igual
+            # con la caché local si existe.
             if cached:
                 logger.warning(
                     "No se pudo consultar la versión de Data Dragon (%s). "
@@ -169,6 +171,8 @@ class ChampionResolver:
                 )
                 self._apply(cached)
                 return
+            if isinstance(exc, GridDataError):
+                raise
             raise GridNetworkError(
                 "No hay conexión con Data Dragon ni caché local de campeones. "
                 "grid-minion necesita red para normalizar campeones."
@@ -335,7 +339,9 @@ class ChampionResolver:
             try:
                 response = requests.get(url, timeout=self._timeout)
 
-                if response.status_code >= 500:
+                # 5xx y 429 son transitorios: se reintentan con backoff (igual
+                # que antes). El resto de 4xx se corta abajo sin reintentar.
+                if response.status_code >= 500 or response.status_code == 429:
                     if attempt == self._max_retries:
                         raise GridNetworkError(
                             f"Data Dragon error {response.status_code} persistente "
@@ -351,7 +357,12 @@ class ChampionResolver:
                     time.sleep(wait)
                     continue
 
-                response.raise_for_status()
+                if response.status_code >= 400:
+                    # 4xx no es transitorio (URL/versión inexistente): reintentar
+                    # solo añadiría ~40 s de espera para el mismo resultado.
+                    raise GridNetworkError(
+                        f"Data Dragon respondió {response.status_code} para {url}."
+                    )
                 try:
                     return response.json()
                 except json.JSONDecodeError as exc:

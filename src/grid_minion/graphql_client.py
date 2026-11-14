@@ -5,6 +5,7 @@ import logging
 import re
 from typing import List, Dict, Any, Optional, Union
 from .exceptions import GridAPIError, GridAuthError, GridRateLimitError, GridNetworkError, GridError
+from ._http import parse_retry_after
 
 logger = logging.getLogger(__name__)
 GRAPHQL_ENUM_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
@@ -54,8 +55,8 @@ class GridGraphQLClient:
                 
                 # --- 1. GESTIÓN DE RATE LIMIT HTTP (429) ---
                 if response.status_code == 429:
-                    retry_after = response.headers.get("Retry-After")
-                    wait_time = float(retry_after) if retry_after else default_wait
+                    wait_time = parse_retry_after(
+                        response.headers.get("Retry-After"), default_wait)
                     
                     if attempt == self.max_retries:
                          raise GridRateLimitError(f"Rate Limit HTTP 429 persistente tras {self.max_retries} intentos.", status_code=429)

@@ -14,7 +14,7 @@ class DraftObserver(Observer):
     secuencia (pick1 es siempre el blind pick de FP). Los bans previos al
     primer pick se bufferean y se clasifican retroactivamente: el primer ban
     observado no es fiable porque GRID puede perder los bans iniciales de un
-    equipo (ver docs/bug_draft_observer_fp_dropped_bans.md).
+    equipo (corregido en el commit a87fd98).
     """
     def __init__(self):
         # Historial global de la partida para almacenar borradores invalidados
@@ -43,8 +43,7 @@ class DraftObserver(Observer):
         # con el primer 'team-picked-character' (pick1 es siempre el blind
         # pick de FP), porque GRID a veces pierde los bans iniciales del lado
         # azul en scrims y el primer ban observado NO es fiable. Estas
-        # acciones se clasifican retroactivamente al conocerse FP.
-        # Ver docs/bug_draft_observer_fp_dropped_bans.md.
+        # acciones se clasifican retroactivamente al conocerse FP (a87fd98).
         self._pending_actions: List[Dict[str, Any]] = []
         # El draft queda congelado al arrancar la partida: a partir de
         # 'series-started-game' una invalidación es una reconexión de feed de

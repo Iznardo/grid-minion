@@ -108,7 +108,7 @@ class TeamsObserver(Observer):
                 puuid = None
                 for link in player.get("externalLinks", []):
                     if link.get("dataProvider", {}).get("name") == "RIOT_PUUID":
-                        puuid = link.get("externalEntity", {}).get("id", "").lower()
+                        puuid = ((link.get("externalEntity") or {}).get("id") or "").lower()
                         break
                 
                 if puuid:
@@ -142,7 +142,9 @@ class TeamsObserver(Observer):
             raw_name = p.get("riotIdGameName") or p.get("summonerName") or "Unknown"
             team_id = p.get("teamId") or p.get("teamID")
             champion = p.get("championName")
-            puuid = p.get("puuid", "").lower()
+            # `or ""`: Riot puede mandar `"puuid": null` (no solo omitirlo);
+            # `.lower()` sobre None tumbaba a TODO el equipo, no solo al jugador.
+            puuid = (p.get("puuid") or "").lower()
             
             if not puuid and p.get("source") not in ["TENCENT_DETAILS", "GRID_GAME_STATE"]:
                 logger.warning(f"Riot no ha enviado el PUUID para {raw_name}")

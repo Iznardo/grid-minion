@@ -6,7 +6,7 @@ import shutil
 from unittest import mock
 
 from grid_minion.champions import ChampionResolver
-from grid_minion.exceptions import GridNetworkError
+from grid_minion.exceptions import GridDataError, GridNetworkError
 
 
 def _fake_response(payload, status=200):
@@ -172,6 +172,58 @@ class TestChampionResolverNetwork(unittest.TestCase):
             resolver = ChampionResolver(max_retries=1)
             with self.assertRaises(GridNetworkError):
                 resolver.normalize("Wukong")
+
+    def _write_cache(self, version="14.9.1"):
+        cache_dir = os.path.join(self.tmp, "ddragon")
+        os.makedirs(cache_dir, exist_ok=True)
+        with open(os.path.join(cache_dir, "champions_en_US.json"), "w") as fh:
+            json.dump({
+                "version": version, "lang": "en_US",
+                "champions": {"MonkeyKing": {"name": "Wukong", "key": 62}},
+            }, fh)
+
+    def test_versions_json_corrupto_con_cache_usa_la_cache(self):
+        self._write_cache()
+        with mock.patch("grid_minion.champions.requests.get",
+                        return_value=_fake_response({"no": "es una lista"})):
+            resolver = ChampionResolver(max_retries=1)
+            self.assertEqual(resolver.normalize("Wukong"), ("MonkeyKing", 62))
+            self.assertEqual(resolver.version, "14.9.1")
+
+    def test_versions_json_corrupto_sin_cache_lanza_data_error(self):
+        with mock.patch("grid_minion.champions.requests.get",
+                        return_value=_fake_response([])):
+            resolver = ChampionResolver(max_retries=1)
+            with self.assertRaises(GridDataError):
+                resolver.normalize("Wukong")
+
+    def test_4xx_no_se_reintenta_y_cae_a_cache(self):
+        self._write_cache()
+        calls = []
+
+        def fake_get(url, timeout=None):
+            calls.append(url)
+            if url.endswith("versions.json"):
+                return _fake_response(["14.10.1"])
+            return _fake_response(None, status=404)
+
+        with mock.patch("grid_minion.champions.requests.get", side_effect=fake_get), \
+                mock.patch("grid_minion.champions.time.sleep") as sleep:
+            resolver = ChampionResolver(max_retries=5)
+            self.assertEqual(resolver.normalize("Wukong"), ("MonkeyKing", 62))
+
+        # versions.json + un solo intento de champion.json, sin esperas.
+        self.assertEqual(len(calls), 2)
+        sleep.assert_not_called()
+
+    def test_429_se_sigue_reintentando(self):
+        responses = [_fake_response(None, status=429), _fake_response(["14.10.1"]),
+                     _fake_response(self._champion_payload())]
+        with mock.patch("grid_minion.champions.requests.get", side_effect=responses), \
+                mock.patch("grid_minion.champions.time.sleep") as sleep:
+            resolver = ChampionResolver(max_retries=3)
+            self.assertEqual(resolver.normalize("Wukong"), ("MonkeyKing", 62))
+        sleep.assert_called_once()
 
 
 if __name__ == "__main__":

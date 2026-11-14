@@ -13,6 +13,7 @@ from .exceptions import (
     GridNetworkError, 
     GridDataError
 )
+from ._http import parse_retry_after
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +59,8 @@ class GridRestClient:
 
                 # --- 1. GESTIÓN RATE LIMIT (429) ---
                 if response.status_code == 429:
-                    retry_after = response.headers.get("Retry-After")
-                    wait_time = float(retry_after) if retry_after else default_wait
+                    wait_time = parse_retry_after(
+                        response.headers.get("Retry-After"), default_wait)
                     
                     if attempt == self.max_retries:
                         raise GridRateLimitError(f"Rate Limit HTTP 429 persistente tras {self.max_retries} intentos.", status_code=429)
