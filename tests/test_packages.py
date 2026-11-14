@@ -57,7 +57,7 @@ class TestJunglePathingSynthetic(unittest.TestCase):
     def _jungler(self, package, pid=2):
         return next(j for j in package["junglers"] if j["pid"] == pid)
 
-    def test_gank_con_kill_y_summoner_rival_quemado(self):
+    def test_gank_en_linea_con_rival_kill_y_summoner(self):
         capture = make_capture(
             paths={2: _still(BLUE_JUNGLE, 10) + _still((7300, 7300), 8) + _still(BLUE_JUNGLE, 10),
                    8: _still(MID_LANE, 28)},
@@ -66,57 +66,98 @@ class TestJunglePathingSynthetic(unittest.TestCase):
                 {"t": 15.0, "kind": "kill", "pid": 2, "x": 7400, "y": 7400,
                  "detail": {"victim": 8, "assistants": [3]}},
             ])
-        ganks = self._jungler(jungle_pathing(capture, until=28))["ganks"]
-        self.assertEqual(len(ganks), 1)
-        gank = ganks[0]
+        jungler = self._jungler(jungle_pathing(capture, until=28))
+        self.assertEqual(len(jungler["lane_visits"]), 1)
+        self.assertEqual(jungler["ganks"], jungler["lane_visits"])
+        gank = jungler["ganks"][0]
         self.assertEqual(gank["lane"], "mid")
+        self.assertEqual(gank["lane_position"], "laning")
+        self.assertEqual(gank["areas"], ["lane_mid_laning"])
         self.assertEqual((gank["t_enter"], gank["t_exit"]), (10.0, 17.0))
+        self.assertEqual(gank["came_from"], "jungle_blue_blue_buff")
+        self.assertEqual(gank["went_to"], "jungle_blue_blue_buff")
+        self.assertFalse(gank["crossed"])
+        self.assertEqual([(e["pid"], e["role"], e["seconds"]) for e in gank["enemies_present"]],
+                         [(8, "MID", 8)])
         self.assertEqual(gank["result"], "kill")
-        self.assertEqual(gank["closest"]["pid"], 8)
-        self.assertEqual(gank["closest"]["role"], "MID")
         self.assertEqual([s["spell"] for s in gank["enemy_summoners"]], ["SummonerFlash"])
 
-    def test_cruzar_la_linea_central_sin_rival_no_es_gank(self):
-        # 4 s en la línea central con el rival lejos (en su base).
+    def test_cruzar_mid_sin_rivales_es_visita_pero_no_gank(self):
+        # De la jungla de arriba (azul) a la de abajo (rojo azul) pasando por mid.
         capture = make_capture(
-            paths={2: _still(BLUE_JUNGLE, 10) + _still(MID_LANE, 4) + _still(BLUE_JUNGLE, 10)})
-        self.assertEqual(self._jungler(jungle_pathing(capture, until=24))["ganks"], [])
+            paths={2: _still(BLUE_JUNGLE, 5) + _still((5000, 5000), 3) + _still((7800, 4000), 5)})
+        jungler = self._jungler(jungle_pathing(capture, until=13))
+        self.assertEqual(jungler["ganks"], [])
+        self.assertEqual(len(jungler["lane_visits"]), 1)
+        visit = jungler["lane_visits"][0]
+        self.assertEqual((visit["lane"], visit["lane_position"]), ("mid", "defensive"))
+        self.assertTrue(visit["crossed"])
+        self.assertFalse(visit["gank"])
+        self.assertEqual(visit["enemies_present"], [])
+        self.assertEqual(visit["result"], "none")
+        self.assertEqual(visit["came_from"], "jungle_blue_blue_buff")
+        self.assertEqual(visit["went_to"], "jungle_blue_red_buff")
 
-    def test_estar_en_linea_sin_nadie_cerca_no_es_gank(self):
-        # 10 s en la línea, pero el rival más cercano está a más de 3500.
+    def test_rival_presente_menos_de_min_enemy_s_no_es_gank(self):
+        # El rival solo coincide 1 s en el área de línea.
         capture = make_capture(
-            paths={2: _still((5000, 5000), 10) + _still(BLUE_JUNGLE, 5), 8: _still((9600, 9600), 15)})
-        self.assertEqual(self._jungler(jungle_pathing(capture, until=15))["ganks"], [])
+            paths={2: _still(BLUE_JUNGLE, 5) + _still((7300, 7300), 6) + _still(BLUE_JUNGLE, 5),
+                   8: _still(RED_BASE, 7) + [MID_LANE] + _still(RED_BASE, 8)})
+        jungler = self._jungler(jungle_pathing(capture, until=16))
+        self.assertEqual(len(jungler["lane_visits"]), 1)
+        self.assertEqual(jungler["lane_visits"][0]["enemies_present"][0]["seconds"], 1)
+        self.assertEqual(jungler["ganks"], [])
+        relaxed = self._jungler(jungle_pathing(capture, until=16, min_enemy_s=1))
+        self.assertEqual(len(relaxed["ganks"]), 1)
 
-    def test_presencia_en_linea_con_rival_a_media_distancia_si_cuenta(self):
+    def test_rival_en_otra_area_de_la_linea_no_cuenta(self):
+        # Jungla en la zona de línea de mid; el rival, bajo sus torres.
         capture = make_capture(
-            paths={2: _still((6000, 6000), 10) + _still(BLUE_JUNGLE, 5), 8: _still((7800, 7800), 15)})
-        ganks = self._jungler(jungle_pathing(capture, until=15))["ganks"]
-        self.assertEqual(len(ganks), 1)
-        self.assertEqual(ganks[0]["result"], "none")
-        self.assertEqual(ganks[0]["near_enemy_s"], 0)
-        self.assertEqual(ganks[0]["in_lane_s"], 10)
+            paths={2: _still(BLUE_JUNGLE, 5) + _still((7300, 7300), 6) + _still(BLUE_JUNGLE, 5),
+                   8: _still((9400, 9400), 16)})
+        jungler = self._jungler(jungle_pathing(capture, until=16))
+        self.assertEqual(jungler["lane_visits"][0]["enemies_present"], [])
+        self.assertEqual(jungler["ganks"], [])
 
-    def test_invade_con_campamento_robado_y_distancia_al_jungla_rival(self):
+    def test_dive_bajo_las_torres_rivales(self):
+        capture = make_capture(
+            paths={2: _still(BLUE_JUNGLE, 5) + _still((9300, 9300), 6) + _still(BLUE_JUNGLE, 5),
+                   8: _still((9400, 9400), 16)})
+        gank = self._jungler(jungle_pathing(capture, until=16))["ganks"][0]
+        self.assertEqual(gank["lane_position"], "dive")
+        self.assertEqual(gank["areas"], ["lane_mid_red_back"])
+
+    def test_invade_por_areas_con_campamento_robado(self):
         capture = make_capture(
             paths={2: _still(BLUE_JUNGLE, 5) + _still(RED_JUNGLE, 6) + _still(BLUE_JUNGLE, 5),
                    7: _still((7000, 12400), 16)},
             events=[
                 {"t": 8.0, "kind": "monster_kill", "pid": 2, "x": 7000, "y": 10900,
-                 "detail": {"monster": "raptor", "in_enemy_jungle": True}},
+                 "detail": {"monster": "redcamp", "in_enemy_jungle": True}},
                 {"t": 9.0, "kind": "ward_placed", "pid": 2, "x": 7000, "y": 10900, "detail": {}},
             ])
         jungler = self._jungler(jungle_pathing(capture, until=16))
         self.assertEqual(len(jungler["invades"]), 1)
         invade = jungler["invades"][0]
-        self.assertEqual(invade["zone"], "jungle_red_top")
+        self.assertEqual(invade["areas"], ["jungle_red_red_buff"])
         self.assertEqual((invade["t_enter"], invade["t_exit"]), (5.0, 10.0))
-        self.assertEqual(invade["camps_taken"], ["raptor"])
+        self.assertEqual(invade["camps_taken"], ["redcamp"])
         self.assertEqual(invade["wards_placed"], 1)
         self.assertEqual(invade["min_enemy_jungler_d"], 1500)
-        self.assertEqual(jungler["camps"][0]["in_enemy_jungle"], True)
+        self.assertEqual(jungler["camps"][0]["area"], "jungle_red_red_buff")
         # El jungla rojo en su propia jungla no está invadiendo.
         self.assertEqual(self._jungler(jungle_pathing(capture, until=16), pid=7)["invades"], [])
+
+    def test_route_por_celdas_y_por_areas(self):
+        capture = make_capture(
+            paths={2: _still(BLUE_JUNGLE, 5) + _still((5000, 5000), 3) + _still((7800, 4000), 5)})
+        jungler = self._jungler(jungle_pathing(capture, until=13))
+        self.assertEqual([a["area"] for a in jungler["area_route"]],
+                         ["jungle_blue_blue_buff", "lane_mid_blue_back", "jungle_blue_red_buff"])
+        self.assertEqual(jungler["area_route"][1]["t_enter"], 5.0)
+        self.assertEqual(jungler["area_route"][1]["t_exit"], 7.0)
+        self.assertEqual(len(jungler["route"]), 3)
+        self.assertTrue(all("cell" in step and "area" in step for step in jungler["route"]))
 
     def test_ventana_hasta_el_primer_recall(self):
         capture = make_capture(
@@ -272,11 +313,18 @@ class TestPackagesOnRealGame(unittest.TestCase):
         self.assertEqual(blue["first_clear"], [
             "redcamp", "krug", "raptor", "wolf", "bluecamp", "gromp", "scuttlecrab"])
         self.assertEqual(blue["first_recall"]["level"], 4)
-        self.assertEqual([c["zone"] for c in blue["camps"][:6]],
-                         ["jungle_blue_bot"] * 3 + ["jungle_blue_top"] * 3)
+        self.assertEqual([c["area"] for c in blue["camps"][:6]], [
+            "jungle_blue_red_buff", "jungle_blue_krugs", "jungle_blue_raptors",
+            "jungle_blue_wolves", "jungle_blue_blue_buff", "jungle_blue_gromp"])
         self.assertEqual(blue["invades"], [])
         self.assertEqual(blue["ganks"], [])
-        self.assertEqual([r["zone"] for r in blue["river_crossings"]], ["river_top"])
+        # Cruza mid de raptors a lobos para hacer el lado de arriba.
+        crossing = blue["lane_visits"][0]
+        self.assertEqual((crossing["lane"], crossing["crossed"], crossing["gank"]),
+                         ("mid", True, False))
+        self.assertEqual((crossing["came_from"], crossing["went_to"]),
+                         ("jungle_blue_raptors", "jungle_blue_wolves"))
+        self.assertEqual([r["area"] for r in blue["river_crossings"]][:1], ["river_top"])
 
     def test_pathing_del_jungla_rojo(self):
         red = jungle_pathing(self.capture)["junglers"][1]
@@ -333,7 +381,8 @@ class TestPackagesOnRealGame(unittest.TestCase):
                               (jungle_pathing(self.capture), "jungle_pathing"),
                               (recall_openings(self.capture, until_s=235), "recall_openings")):
             data = json.loads(json.dumps(package))
-            self.assertEqual(data["schema"], f"grid-minion/package/{name}/v1")
+            version = "v2" if name == "jungle_pathing" else "v1"
+            self.assertEqual(data["schema"], f"grid-minion/package/{name}/{version}")
             self.assertEqual(data["game"]["series_id"], "2922522")
 
     def test_sin_eventos_o_sin_posiciones_falla_con_mensaje_claro(self):

@@ -35,3 +35,7 @@ test = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+# Mapa de celdas de la Grieta (grid_minion.rift).
+grid_minion = ["data/*.json"]

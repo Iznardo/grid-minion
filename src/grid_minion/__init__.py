@@ -8,6 +8,7 @@ from .utils import (
 from .io import iter_jsonl
 from .observers import Observer, GameEventProcessor
 from .capture import GameCapture, build_capture, capture_game
+from .rift import RiftMap
 from .sources import extract_grid_game_state
 from .champions import (
     ChampionResolver,
@@ -35,6 +36,7 @@ __all__ = [
     "GameCapture",
     "build_capture",
     "capture_game",
+    "RiftMap",
     "Observer",
     "GameEventProcessor",
     "extract_grid_game_state",

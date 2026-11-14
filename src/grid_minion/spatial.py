@@ -22,7 +22,10 @@ from typing import Any, Dict, Optional, Tuple
 # Límites del mapa que usa Riot para escalar el minimapa.
 MAP_MIN_X, MAP_MIN_Y = -120, -120
 MAP_MAX_X, MAP_MAX_Y = 14870, 14980
-MAP_CENTER = ((MAP_MIN_X + MAP_MAX_X) / 2, (MAP_MIN_Y + MAP_MAX_Y) / 2)
+# Centro de simetría del mapa, medido con posiciones reales (el terreno girado
+# 180° sobre este punto coincide consigo mismo). No es el centro geométrico de
+# los límites del minimapa, que está ~50 unidades desplazado.
+MAP_CENTER = (7425.0, 7450.0)
 
 # `x + y` sobre la línea del río (pasa por el centro del mapa).
 RIVER_SUM = MAP_CENTER[0] + MAP_CENTER[1]
