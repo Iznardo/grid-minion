@@ -3,7 +3,7 @@ from typing import Any, Dict, Sequence
 
 from .. import spatial
 from ..capture import GameCapture
-from ._common import annotated_path, player_info, require_sections, runs, slim_event
+from ._common import annotated_path, locate, player_info, require_sections, runs, slim_event
 
 SCHEMA = "grid-minion/package/level_one/v1"
 
@@ -29,7 +29,7 @@ def level_one(
         {schema, game, window: {t0, t1},
          players: {pid: {pid, side, role, champion, name,
                          path: [{t, x, y, alive, zone}],
-                         marks: {"30": {x, y, zone} | None, ...}}},
+                         marks: {"30": {x, y, zone, cell, area} | None, ...}}},
          wards: [evento], kills: [evento], summoners: [evento],
          invades: [{pid, side, role, champion, zone, t_enter, t_exit, duration,
                     deepest: {x, y}}]}
@@ -50,7 +50,7 @@ def level_one(
                 continue
             pos = capture.positions.at(pid, mark)
             marks[str(int(mark) if float(mark).is_integer() else mark)] = (
-                {"x": pos["x"], "y": pos["y"], "zone": spatial.zone_of(pos["x"], pos["y"])}
+                {"x": pos["x"], "y": pos["y"], **locate(pos["x"], pos["y"])}
                 if pos else None)
         players[str(pid)] = {**info, "path": path, "marks": marks}
 

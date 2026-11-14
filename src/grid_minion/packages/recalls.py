@@ -41,7 +41,7 @@ def recall_openings(
             t_leave_base, shop_s,             # cuándo sale y cuánto tarda
             path: [{t, x, y, alive, zone}],   # `window_s` segundos tras salir
             zones: [{zone, t_enter}],         # zonas por las que pasa, en orden
-            destination: {x, y, zone, t} | None,   # dónde está al acabar la ventana
+            destination: {x, y, zone, cell, area, t} | None,  # al acabar la ventana
             travel_s,                         # desde que sale hasta llegar a ese punto
             teleport: {t, spell} | None,      # TP usado tras el recall
             died: bool,                       # murió dentro de la ventana
@@ -108,7 +108,8 @@ def _one_recall(capture: GameCapture, pid: int, t_end: float, window_s: float,
         zones = zone_sequence(path)
         if path:
             last = path[-1]
-            destination = {"x": last["x"], "y": last["y"], "zone": last["zone"], "t": last["t"]}
+            destination = {"x": last["x"], "y": last["y"], "zone": last["zone"],
+                           "cell": last["cell"], "area": last["area"], "t": last["t"]}
             arrived = next(s for s in path if spatial.distance(s, last) <= arrive_radius)
             travel_s = round(arrived["t"] - t_leave, 3)
 
